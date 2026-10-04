@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Мурино FM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="drun.css">
+</head>
+<body>
+
+  <div class="top-news-ticker">
+    <div class="top-news-label">НОВОСТИ</div>
+    <div class="top-news-scroll">
+      <div class="top-news-track" id="topNewsTrack"></div>
+    </div>
+  </div>
+
+  <div class="theme-switcher">
+    <button class="theme-btn active" data-theme-btn="light" title="Светлая">☀</button>
+    <button class="theme-btn" data-theme-btn="dark" title="Тёмная">🌙</button>
+    <button class="theme-btn" data-theme-btn="green" title="Светло-зелёная">🌿</button>
+  </div>
+
+  <button class="noise-toggle" id="noiseToggle" title="Шум вкл/выкл">◐</button>
+  <div class="online-badge">
+    <span class="online-dot"></span>
+    <span>онлайн: <b id="onlineCount">0</b></span>
+  </div>
+
+  <div class="extra-buttons">
+    <a class="extra-btn donate-btn" href="https://www.donationalerts.com/r/s3lezen" target="_blank" rel="noopener noreferrer" title="Поддержать проект">
+      <span class="extra-icon">❤</span>
+      <span class="extra-text">Поддержать проект</span>
+    </a>
+    <a class="extra-btn projects-btn" href="https://arena-cs.vercel.app/" target="_blank" rel="noopener noreferrer" title="Другие проекты">
+      <span class="extra-icon">◆</span>
+      <span class="extra-text">Другие проекты</span>
+    </a>
+  </div>
+
+  <button class="drungader-btn" id="drungaderBtn" title="DrunGrader">
+    <span>🎰</span>
+    <span class="drungader-btn-label">DRUNGRADER</span>
+  </button>
+
+  <canvas id="bgNoise"></canvas>
+
+  <main class="radio">
+    <div class="top-bar">
+      <span class="live-dot"></span>
+      <span class="live-text">В ЭФИРЕ</span>
+      <span class="freq">67.6 FM</span>
+    </div>
+
+    <h1 class="logo" id="logoEl">МУРИНО<span>FM</span></h1>
+
+    <div class="player-box">
+      <div class="screen">
+        <div class="screen-label">◆ СИГНАЛ ◆</div>
+        <canvas id="visualizer" width="400" height="70"></canvas>
+        <div class="now-playing" id="nowPlaying">нажми play чтобы начать эфир</div>
+      </div>
+
+      <div class="controls">
+        <button id="playBtn" class="btn" title="Играть / Пауза">
+          <svg id="playIcon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </button>
+        <button id="skipBtn" class="btn-small" title="Голосовать за пропуск">⏭</button>
+        <div class="volume">
+          <span>VOL</span>
+          <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8">
+        </div>
+      </div>
+
+      <div class="vote-popup" id="votePopup">
+        <div class="vote-popup-header">
+          <span>ПРОПУСТИТЬ ТРЕК?</span>
+          <button class="vote-popup-close" id="votePopupClose">✕</button>
+        </div>
+        <div class="vote-popup-body">
+          <button class="vote-popup-btn" id="skipVoteBtn">
+            <span class="vote-icon">⏭</span>
+            <span class="vote-text">Голосовать</span>
+          </button>
+          <div class="vote-popup-info" id="voteInfo">голосов: 0 / 1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reactions-block">
+      <button class="reaction-btn up" data-reaction="up">👍 <span class="reaction-count" data-count="up">0</span></button>
+      <button class="reaction-btn down" data-reaction="down">👎 <span class="reaction-count" data-count="down">0</span></button>
+    </div>
+
+    <div class="chat-box">
+      <div class="chat-header">
+        <span>◆ ЧАТ ◆</span>
+        <span>НИК: <b id="nicknameDisplay">Гость</b></span>
+      </div>
+      <div class="name-input-row">
+        <input type="text" id="nicknameInput" placeholder="введи имя (необязательно)" maxlength="20">
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="emoji-bar" id="emojiBar">
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="💀">💀</button>
+        <button class="emoji-btn" data-emoji="👍">👍</button>
+        <button class="emoji-btn" data-emoji="❤️">❤️</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="🎵">🎵</button>
+        <button class="emoji-btn" data-emoji="🎧">🎧</button>
+        <button class="emoji-btn" data-emoji="📻">📻</button>
+        <button class="emoji-btn" data-emoji="🚀">🚀</button>
+        <button class="emoji-btn" data-emoji="🐒">🐒</button>
+        <button class="emoji-btn" data-emoji="🌫️">🌫️</button>
+        <button class="emoji-btn" data-emoji="🏢">🏢</button>
+        <button class="emoji-btn" data-emoji="🍕">🍕</button>
+        <button class="emoji-btn" data-emoji="🚚">🚚</button>
+        <button class="emoji-btn" data-emoji="🐦">🐦</button>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="написать сообщение..." maxlength="200">
+        <button id="chatSend">→</button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>© МУРИНО FM</span>
+    </footer>
+  </main>
+
+  <div class="top-row">
+    <div class="top-block">
+      <div class="top-header">◆ ТОП-5 ЛУЧШИХ ◆</div>
+      <div class="top-list" id="topBestList">
+        <div class="top-empty">загрузка...</div>
+      </div>
+    </div>
+    <div class="top-block">
+      <div class="top-header">◆ ТОП-5 ХУДШИХ ◆</div>
+      <div class="top-list" id="topWorstList">
+        <div class="top-empty">загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="weather-widget" id="weatherWidget">
+    <div class="weather-icon" id="weatherIcon">🌡️</div>
+    <div class="weather-info">
+      <div class="weather-city">Мурино</div>
+      <div class="weather-temp" id="weatherTemp">—°C</div>
+      <div class="weather-desc" id="weatherDesc">загрузка...</div>
+    </div>
+  </div>
+
+  <div class="secret-room" id="secretRoom">
+    <div class="tree-wrap" id="treeWrap">
+      <svg class="tree-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 230 500 Q 235 450 240 400 Q 245 360 250 340 Q 255 320 250 300 Q 245 280 240 260 Q 230 240 220 220 Q 210 200 200 180 Q 190 160 185 140 Q 180 120 180 100 Q 182 85 190 75 Q 195 68 200 60 Q 205 50 210 42 Q 215 35 220 30 Q 225 25 230 22 Q 235 20 240 22 Q 245 25 250 30 Q 255 35 260 42 Q 265 50 270 60 Q 275 68 280 75 Q 288 85 290 100 Q 290 120 285 140 Q 280 160 270 180 Q 260 200 250 220 Q 240 240 235 260 Q 230 280 225 300 Q 220 320 225 340 Q 230 360 235 400 Q 240 450 245 500 Z" />
+        <path d="M 230 300 Q 200 290 170 270 Q 145 255 120 230 Q 100 210 85 185 Q 75 165 70 145" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M 250 250 Q 280 230 310 210 Q 340 195 365 175 Q 385 160 400 140 Q 412 125 420 110" stroke="currentColor" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M 200 200 Q 170 180 145 155 Q 125 135 110 110" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 290 180 Q 320 160 350 140 Q 375 125 395 105" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 220 130 Q 195 110 175 85 Q 160 65 150 45" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 270 110 Q 295 90 320 70 Q 340 55 355 35" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 245 80 Q 250 60 255 40 Q 258 25 260 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 210 260 Q 180 250 155 230 Q 135 215 120 195" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 270 240 Q 300 225 325 205 Q 345 190 360 170" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 175 270 Q 145 265 120 250 Q 100 240 85 225" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 320 220 Q 345 210 365 195" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 160 220 Q 135 205 115 185" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 340 180 Q 360 165 375 145" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 195 165 Q 175 145 160 120" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 300 145 Q 325 130 345 110" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 240 50 Q 220 40 200 25" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M 255 45 Q 275 35 295 20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="secret-text" id="secretText" style="display:none;"></div>
+    <button class="secret-exit" id="secretExit">выйти</button>
+  </div>
+
+  <div class="ptenec-screen" id="ptenecScreen">
+    <img class="ptenec-img" src="./ptenec.jpg" alt="чйцо">
+    <div class="ptenec-caption">чйцо с ебалом птенца</div>
+  </div>
+
+  <div class="drungader-modal" id="drungaderModal">
+    <div class="drungader-content">
+      <div class="drungader-header">
+        <span>◆ DRUNGRADER ◆</span>
+        <button class="drungader-close" id="drungaderClose">✕</button>
+      </div>
+
+      <div class="drun-mode-switch" id="drunModeSwitch">
+        <button class="drun-mode-btn active" id="drunModeUpgrade">АПГРЕЙД</button>
+        <button class="drun-mode-btn" id="drunModeExchange">ОБМЕН</button>
+      </div>
+
+      <div class="drungader-locked" id="drungaderLocked">
+        <div class="drungader-locked-text">
+          Оцени <b id="drunLockedNeed">10</b> треков, чтобы открыть DrunGrader
+        </div>
+        <div class="drungader-locked-progress">
+          <div class="drungader-locked-bar" id="drunLockedBar"></div>
+        </div>
+        <div class="drungader-locked-count">
+          <b id="drunLockedDone">0</b> / <span id="drunLockedTotal">10</span>
+        </div>
+      </div>
+
+      <div class="drungader-game" id="drungaderGame">
+        <div class="drun-upgrade-panel" id="drunUpgradePanel">
+          <div class="drungader-left">
+            <div class="drungader-panel-title">ИНВЕНТАРЬ</div>
+            <div class="drungader-inventory" id="drunInventory">
+              <div class="drungader-empty">пусто</div>
+            </div>
+          </div>
+
+          <div class="drungader-center">
+            <div class="drungader-panel-title">СТАВКА</div>
+            <div class="drungader-bet" id="drunBet">
+              <div class="drungader-empty">кликни по локации слева</div>
+            </div>
+            <div class="drungader-bet-sum" id="drunBetSum">сумма: 0</div>
+
+            <div class="drungader-wheel-wrap">
+              <canvas id="drunWheel" width="280" height="280"></canvas>
+              <div class="drungader-marker" id="drunMarker"></div>
+              <div class="drungader-chance" id="drunChance">0%</div>
+            </div>
+            <button class="drungader-spin" id="drunSpin" disabled>КРУТИТЬ</button>
+          </div>
+
+          <div class="drungader-right">
+            <div class="drungader-panel-title">ЦЕЛЬ</div>
+            <div class="drungader-targets" id="drunTargets">
+              <div class="drungader-empty">выбери ставку</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="drungader-exchange" id="drunExchangePanel" style="display: none;">
+          <div class="drun-exchange-row">
+            <div class="drun-exchange-panel">
+              <div class="drungader-panel-title">ОТДАЁШЬ</div>
+              <div id="drunExchangeFrom">
+                <div class="drungader-empty">правый клик → Обменять</div>
+              </div>
+            </div>
+            <div class="drun-exchange-panel">
+              <div class="drungader-panel-title">ПОЛУЧАЕШЬ</div>
+              <div id="drunExchangeTo">
+                <div class="drungader-empty">выбери что отдать</div>
+              </div>
+            </div>
+          </div>
+          <div class="drun-exchange-rate" id="drunExchangeRate">—</div>
+          <button class="drungader-spin" id="drunExchangeConfirm" disabled>ОБМЕНЯТЬ</button>
+        </div>
+      </div>
+
+      <div class="drungader-message" id="drunMessage"></div>
+    </div>
+  </div>
+
+  <div class="drun-context-menu" id="drunContextMenu"></div>
+
+  <script type="module" src="script.js"></script>
+  <script type="module" src="drun.js"></script>
+</body>
+</html>

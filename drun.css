@@ -1,0 +1,567 @@
+/* Кнопка DrunGader — нижний левый угол */
+.drungader-btn {
+  position: fixed;
+  bottom: 18px;
+  left: 18px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-paper);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--shadow-color);
+  transition: all 0.15s ease;
+}
+
+.drungader-btn:hover {
+  background: var(--accent);
+  color: var(--bg-paper);
+  transform: translate(-1px, -1px);
+  box-shadow: 6px 6px 0 var(--shadow-color);
+}
+
+.drungader-btn span:first-child { font-size: 20px; }
+
+@media (max-width: 480px) {
+  .drungader-btn { padding: 8px 12px; font-size: 10px; bottom: 12px; left: 12px; }
+  .drungader-btn-label { display: none; }
+  .drungader-btn span:first-child { font-size: 24px; }
+}
+
+/* Модальное окно DrunGader */
+.drungader-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.drungader-modal.active { display: flex; }
+
+.drungader-content {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-paper);
+  border: 3px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 10px 10px 0 var(--shadow-color);
+}
+
+.drungader-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--accent);
+  color: var(--bg-paper);
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  letter-spacing: 4px;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.drungader-close {
+  background: transparent;
+  border: none;
+  color: var(--bg-paper);
+  font-size: 18px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+
+/* Замок */
+.drungader-locked {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.drungader-locked-text {
+  font-size: 14px;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.drungader-locked-text b { color: var(--accent); }
+
+.drungader-locked-progress {
+  width: 100%;
+  max-width: 400px;
+  height: 12px;
+  background: var(--bg-paper-2);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.drungader-locked-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.3s ease;
+}
+
+.drungader-locked-count {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.drungader-locked-count b { color: var(--accent); }
+
+/* Игра */
+.drungader-game {
+  display: none;
+  padding: 18px;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: start;
+}
+
+.drungader-game.active { display: grid; }
+
+.drungader-left,
+.drungader-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drungader-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.drungader-panel-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-soft);
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.drungader-inventory,
+.drungader-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 100px;
+}
+
+.drungader-empty {
+  font-size: 11px;
+  color: var(--text-soft);
+  text-align: center;
+  padding: 20px;
+  font-family: 'Courier Prime', monospace;
+}
+
+.drungader-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-paper-2);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.drungader-item:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.drungader-item.selected {
+  background: var(--accent);
+  color: var(--bg-paper);
+  border-color: var(--accent);
+}
+
+.drungader-item.selected .drungader-item-name,
+.drungader-item.selected .drungader-item-count,
+.drungader-item.selected .drungader-item-chance {
+  color: var(--bg-paper) !important;
+}
+
+.drungader-item-count,
+.drungader-item-chance {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+/* Колесо */
+.drungader-wheel-wrap {
+  position: relative;
+  width: 280px;
+  height: 280px;
+}
+
+#drunWheel {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.drungader-marker {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #f1c40f;
+  border: 2px solid #2a1f14;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(241, 196, 15, 0.8);
+}
+
+.drungader-chance {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Oswald', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.drungader-spin {
+  padding: 12px 32px;
+  background: var(--accent);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  color: var(--bg-paper);
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  letter-spacing: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: all 0.15s ease;
+}
+
+.drungader-spin:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+.drungader-spin:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow-color);
+}
+
+.drungader-spin:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.drungader-message {
+  padding: 0 18px 18px;
+  text-align: center;
+  font-family: 'Oswald', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  min-height: 24px;
+}
+
+@media (max-width: 700px) {
+  .drungader-game {
+    grid-template-columns: 1fr;
+  }
+  .drungader-wheel-wrap {
+    width: 240px;
+    height: 240px;
+  }
+  .drungader-content {
+    max-width: 100%;
+  }
+}
+
+/* Переключатель режимов */
+.drun-mode-switch {
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-paper-2);
+  position: sticky;
+  top: 44px;
+  z-index: 4;
+}
+
+.drun-mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drun-mode-btn:hover {
+  background: var(--bg-paper);
+}
+
+.drun-mode-btn.active {
+  background: var(--accent);
+  color: var(--bg-paper);
+  border-color: var(--accent);
+}
+
+/* Контекстное меню */
+.drun-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-paper);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  display: none;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+}
+
+.drun-context-menu.active { display: flex; }
+
+.drun-ctx-item {
+  padding: 8px 12px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.12s;
+}
+
+.drun-ctx-item:hover {
+  background: var(--accent);
+  color: var(--bg-paper);
+}
+
+/* Панель обмена */
+.drungader-exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  grid-column: 1 / -1;
+}
+
+.drun-exchange-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.drun-exchange-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 100px;
+}
+
+.drun-exchange-rate {
+  text-align: center;
+  font-family: 'Courier Prime', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px;
+  background: var(--bg-paper-2);
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.drun-exchange-rate b { color: var(--accent); }
+
+.drungader-exchange .drungader-spin {
+  align-self: center;
+}
+
+/* Мультиставка */
+.drungader-bet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 100px;
+}
+
+.drungader-item.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.drungader-item.in-bet {
+  background: var(--accent);
+}
+
+.drungader-item.in-bet .drungader-item-name {
+  color: var(--bg-paper) !important;
+}
+
+.drungader-item-remove {
+  color: var(--bg-paper);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.drungader-item-remove:hover {
+  color: #f1c40f;
+}
+
+.drungader-bet-sum {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  color: var(--text-soft);
+  text-align: center;
+  padding: 4px 0;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+}
+
+/* ============================================
+   МОБИЛЬНАЯ АДАПТАЦИЯ DRUNGRADER
+   ============================================ */
+@media (max-width: 700px) {
+  .drungader-modal { padding: 0; }
+
+  .drungader-content {
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100vh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  .drungader-header {
+    padding: 10px 14px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .drun-mode-switch {
+    top: 40px;
+    padding: 8px 12px;
+  }
+
+  .drun-mode-btn {
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 6px;
+  }
+
+  .drungader-game {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .drungader-center {
+    order: -1;
+  }
+
+  .drungader-wheel-wrap {
+    width: 200px;
+    height: 200px;
+  }
+
+  .drungader-chance {
+    font-size: 22px;
+  }
+
+  .drungader-spin {
+    padding: 10px 24px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .drungader-item {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .drungader-panel-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .drun-exchange-row {
+    grid-template-columns: 1fr;
+  }
+
+  .drungader-locked {
+    padding: 30px 16px;
+  }
+
+  .drungader-locked-text { font-size: 13px; }
+
+  .drungader-message {
+    padding: 0 12px 16px;
+    font-size: 14px;
+  }
+
+  /* Увеличиваем тач-зоны у контекстного меню */
+  .drun-ctx-item {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .drungader-wheel-wrap {
+    width: 170px;
+    height: 170px;
+  }
+  .drungader-chance { font-size: 18px; }
+}
