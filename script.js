@@ -43,7 +43,7 @@ if (!myId) {
 }
 
 // ============================================
-// ПЛЕЙЛИСТ (81 трек через прокси Vercel)
+// ПЛЕЙЛИСТ (81 трек, dbimg.app через прокси)
 // ============================================
 const PROXY = 'https://murino-fm-rho.vercel.app/api/proxy?url=';
 
@@ -202,10 +202,12 @@ function shuffleArray(arr) {
 const shuffledNews = shuffleArray(news);
 
 // ============================================
-// ДВА АУДИО (без crossOrigin — иначе CORS-блок)
+// ДВА АУДИО (crossOrigin нужен для визуализатора)
 // ============================================
 const audioA = new Audio();
 const audioB = new Audio();
+audioA.crossOrigin = "anonymous";
+audioB.crossOrigin = "anonymous";
 audioA.volume = 0.8;
 audioB.volume = 0;
 
@@ -265,42 +267,97 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0) {
 }
 
 // ============================================
-// ПСЕВДО-ВИЗУАЛИЗАТОР (без Web Audio API)
+// ВИЗУАЛИЗАТОР (Web Audio API, настоящий)
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
 
 const BAR_COUNT = 24;
-let visPhase = 0;
+const MAX_PIECES = 8;
+const GRAVITY = 0.4;
+const PIECE_HEIGHT = 4;
+
+let pieces = [];
 let prevLevels = new Array(BAR_COUNT).fill(0);
+
+function initPieces() {
+  pieces = [];
+  for (let i = 0; i < BAR_COUNT; i++) pieces.push([]);
+}
+
+let audioCtx, analyser, dataArray;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+
+    const srcA = audioCtx.createMediaElementSource(audioA);
+    const srcB = audioCtx.createMediaElementSource(audioB);
+    const merger = audioCtx.createGain();
+
+    srcA.connect(merger);
+    srcB.connect(merger);
+    merger.connect(analyser);
+    analyser.connect(audioCtx.destination);
+
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    initPieces();
+    drawVisualizer();
+  } catch (e) {
+    console.warn('Аудио-контекст не запустился:', e);
+  }
+}
 
 function drawVisualizer() {
   requestAnimationFrame(drawVisualizer);
+  if (!analyser) return;
+
+  analyser.getByteFrequencyData(dataArray);
 
   const w = canvas.width;
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
 
-  const playing = activePlayer && !activePlayer.paused && isPlaying;
-  visPhase += playing ? 0.08 : 0.02;
-
   const barWidth = w / BAR_COUNT;
+  const step = Math.floor(dataArray.length / BAR_COUNT);
+
   const levels = [];
+  for (let i = 0; i < BAR_COUNT; i++) {
+    let sum = 0;
+    for (let j = 0; j < step; j++) sum += dataArray[i * step + j];
+    levels[i] = (sum / step) / 255;
+  }
 
   for (let i = 0; i < BAR_COUNT; i++) {
-    if (playing) {
-      const base = 0.35 + 0.3 * Math.sin(visPhase + i * 0.7);
-      const wobble = 0.2 * Math.sin(visPhase * 2.3 + i * 1.4);
-      const noise = Math.random() * 0.15;
-      levels[i] = Math.max(0.05, Math.min(1, base + wobble + noise));
-    } else {
-      levels[i] = 0.04 + 0.03 * Math.sin(visPhase + i * 0.5);
+    const barPieces = pieces[i];
+    const barX = i * barWidth + barWidth * 0.15;
+    const bw = barWidth * 0.7;
+
+    for (let k = barPieces.length - 1; k >= 0; k--) {
+      const piece = barPieces[k];
+      piece.y += piece.vy;
+      piece.vy += GRAVITY;
+
+      if (piece.y > h) {
+        barPieces.splice(k, 1);
+        continue;
+      }
+
+      const gradient = ctx.createLinearGradient(0, h, 0, 0);
+      gradient.addColorStop(0, '#d44020');
+      gradient.addColorStop(1, '#f5a623');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(barX, piece.y, bw, PIECE_HEIGHT);
     }
   }
 
   for (let i = 0; i < BAR_COUNT; i++) {
     const level = levels[i];
     const barHeight = Math.max(2, level * h * 0.9);
+
     const x = i * barWidth + barWidth * 0.15;
     const y = h - barHeight;
     const bw = barWidth * 0.7;
@@ -308,15 +365,28 @@ function drawVisualizer() {
     const gradient = ctx.createLinearGradient(0, h, 0, 0);
     gradient.addColorStop(0, '#d44020');
     gradient.addColorStop(1, '#f5a623');
+
     ctx.fillStyle = gradient;
     ctx.fillRect(x, y, bw, barHeight);
-  }
 
-  for (let i = 0; i < BAR_COUNT; i++) {
-    prevLevels[i] = levels[i];
+    const prev = prevLevels[i];
+    const diff = prev - level;
+
+    if (diff > 0.08) {
+      const topY = h - prev * h * 0.9;
+      pieces[i].push({
+        y: topY,
+        vy: -1 - Math.random() * 1.5,
+      });
+
+      if (pieces[i].length > MAX_PIECES) {
+        pieces[i].shift();
+      }
+    }
+
+    prevLevels[i] = level;
   }
 }
-drawVisualizer();
 
 // ============================================
 // ФОНОВЫЙ ШУМ
@@ -716,6 +786,7 @@ onValue(chatRef, (snapshot) => {
 // КНОПКА PLAY
 // ============================================
 playBtn.addEventListener('click', () => {
+  initAudio();
   if (isPlaying || pendingPlay) {
     stopTimers();
     pendingPlay = false;
