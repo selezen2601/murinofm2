@@ -565,3 +565,88 @@
   }
   .drungader-chance { font-size: 18px; }
 }
+
+/* ============================================
+   КЛИКЕР
+   ============================================ */
+.drun-clicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  margin-top: 6px;
+  border-top: 2px dashed var(--border);
+  background: var(--bg-paper-2);
+}
+
+.drun-clicker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.drun-clicker-count {
+  font-family: 'Oswald', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+
+.drun-clicker-count b { color: var(--accent); }
+
+.drun-clicker-next {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.drun-clicker-btn {
+  padding: 14px 28px;
+  background: var(--accent);
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  color: var(--bg-paper);
+  font-family: 'Oswald', sans-serif;
+  font-size: 15px;
+  letter-spacing: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: all 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;   /* без задержки и зума при быстрых тапах */
+}
+
+.drun-clicker-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--shadow-color);
+}
+
+.drun-clicker-btn:active,
+.drun-clicker-btn.pressed {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow-color);
+}
+
+@media (max-width: 700px) {
+  .drun-clicker {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .drun-clicker-info { align-items: center; }
+
+  .drun-clicker-btn {
+    width: 100%;
+    padding: 18px 16px;
+    font-size: 16px;
+  }
+}
