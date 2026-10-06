@@ -149,7 +149,7 @@ const trackDurations = [
 if (trackDurations.length !== RAW_PLAYLIST.length) {
   console.warn(`В плейлисте ${RAW_PLAYLIST.length} треков, а длительностей ${trackDurations.length}. ` +
     `Лишние в конце отброшены. Если пропала ссылка в середине списка — все длительности после неё сдвинуты, ` +
-    `запусти await checkDurations() в консоли.`);
+    `запусти await measureRealDurations() в консоли.`);
   if (trackDurations.length > RAW_PLAYLIST.length) trackDurations.length = RAW_PLAYLIST.length;
 }
 
@@ -216,10 +216,13 @@ function shuffleArray(arr) {
 const shuffledNews = shuffleArray(news);
 
 // ============================================
-// ДВА АУДИО (без crossOrigin — иначе CORS-блок)
+// ДВА АУДИО (crossOrigin нужен Web Audio API; играем ТОЛЬКО через прокси с CORS)
 // ============================================
 const audioA = new Audio();
 const audioB = new Audio();
+// Без crossOrigin AnalyserNode получает нули (а источник вообще глушится) — ставим до любого src
+audioA.crossOrigin = 'anonymous';
+audioB.crossOrigin = 'anonymous';
 audioA.volume = 0.8;
 audioB.volume = 0;
 
@@ -232,6 +235,52 @@ const FADE_STEPS = 30;
 const FADE_INTERVAL = FADE_TIME / FADE_STEPS;
 
 let fadeTimer = null;
+
+// --- Web Audio API: audioA/audioB → masterGain → analyser → колонки ---
+let audioCtx = null;
+let masterGain = null;
+let analyser = null;
+let freqData = null;
+let webAudioOk = false;
+
+// Вызывать из обработчика клика: AudioContext нельзя запускать без жеста пользователя
+function initAudio() {
+  if (!audioCtx) {
+    let srcA = null;
+    let srcB = null;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 1;
+
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.6;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+
+      srcA = audioCtx.createMediaElementSource(audioA);
+      srcB = audioCtx.createMediaElementSource(audioB);
+      srcA.connect(masterGain);
+      srcB.connect(masterGain);
+      masterGain.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      webAudioOk = true;
+    } catch (e) {
+      console.warn('Web Audio не запустился, визуализатор покажет плоские линии:', e);
+      webAudioOk = false;
+      // Если плеер уже ушёл в граф, а граф не собрался — выведем звук напрямую, иначе будет тишина
+      try { if (srcA) srcA.connect(audioCtx.destination); } catch (e2) {}
+      try { if (srcB) srcB.connect(audioCtx.destination); } catch (e2) {}
+    }
+  }
+
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+}
 
 // --- Разблокировка обоих плееров ---
 // Браузеры (особенно iOS Safari) разрешают play() только для элемента, который уже запускали
@@ -257,15 +306,14 @@ function unlockAudio() {
 }
 
 // --- Загрузка трека с повторами ---
-// Чётные попытки идут через прокси, нечётные — напрямую (для <audio> CORS не нужен),
-// так упавший прокси больше не означает тишину.
+// Только через прокси: прямой cdn.dbimg.app не отдаёт CORS-заголовков, а с crossOrigin='anonymous'
+// такой файл либо не загрузится, либо Web Audio выдаст тишину. Повторные попытки добавляют
+// к адресу &_r=N (прокси его игнорирует) — это обходит закешированный сбой на краю CDN.
 const MAX_LOAD_ATTEMPTS = 4;
 const durationWarned = new Set();
 
 function sourceFor(trackIndex, attempt) {
-  const direct = RAW_PLAYLIST[trackIndex];
-  if (attempt % 2 === 1 && direct) return direct;
-  return playlist[trackIndex];
+  return attempt > 0 ? playlist[trackIndex] + '&_r=' + attempt : playlist[trackIndex];
 }
 
 function detachPlayerHandlers(player) {
@@ -379,14 +427,51 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0, trackIndex = currentTrac
 }
 
 // ============================================
-// ПСЕВДО-ВИЗУАЛИЗАТОР (без Web Audio API)
+// ВИЗУАЛИЗАТОР (Web Audio API — настоящий спектр звука)
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
 
 const BAR_COUNT = 24;
-let visPhase = 0;
-let prevLevels = new Array(BAR_COUNT).fill(0);
+const BREAK_DROP = 0.12;      // насколько резко должна упасть палочка, чтобы отломился кусочек
+const PIECE_H = 4;            // высота отломившегося кусочка, px
+const GRAVITY = 0.45;         // ускорение падения кусочка
+const MAX_PIECES_PER_BAR = 3;
+
+let prevLevels = new Array(BAR_COUNT).fill(0);   // отображаемый уровень каждой палочки
+let prevRaw = new Array(BAR_COUNT).fill(0);      // «сырой» уровень на прошлом кадре
+const pieces = [];                                // отломившиеся верхушки
+
+// Спектр → BAR_COUNT уровней 0..1. null — нет данных (граф не запущен): рисуем плоские линии
+function readSpectrum() {
+  if (!webAudioOk || !analyser) return null;
+
+  analyser.getByteFrequencyData(freqData);
+
+  // Полезная музыкальная часть — нижние ~44 из 64 бинов; палочки распределены логарифмически:
+  // низким частотам больше места, как в обычном эквалайзере
+  const usable = Math.min(freqData.length, 44);
+  const out = new Array(BAR_COUNT);
+
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const lo = Math.floor(Math.pow(i / BAR_COUNT, 1.7) * usable);
+    const hi = Math.max(lo + 1, Math.floor(Math.pow((i + 1) / BAR_COUNT, 1.7) * usable));
+
+    let sum = 0;
+    let max = 0;
+    for (let k = lo; k < hi; k++) {
+      const v = freqData[k];
+      sum += v;
+      if (v > max) max = v;
+    }
+    const avg = sum / (hi - lo);
+
+    // небольшой подъём высоких, иначе они всегда ниже басов
+    const tilt = 0.8 + 0.6 * (i / BAR_COUNT);
+    out[i] = Math.min(1, ((avg + max) / 2 / 255) * tilt);
+  }
+  return out;
+}
 
 function drawVisualizer() {
   requestAnimationFrame(drawVisualizer);
@@ -395,39 +480,53 @@ function drawVisualizer() {
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
 
-  const playing = activePlayer && !activePlayer.paused && isPlaying;
-  visPhase += playing ? 0.08 : 0.02;
-
+  const raw = readSpectrum();
   const barWidth = w / BAR_COUNT;
-  const levels = [];
+  const bw = barWidth * 0.7;
+
+  const gradient = ctx.createLinearGradient(0, h, 0, 0);
+  gradient.addColorStop(0, '#d44020');
+  gradient.addColorStop(1, '#f5a623');
 
   for (let i = 0; i < BAR_COUNT; i++) {
-    if (playing) {
-      const base = 0.35 + 0.3 * Math.sin(visPhase + i * 0.7);
-      const wobble = 0.2 * Math.sin(visPhase * 2.3 + i * 1.4);
-      const noise = Math.random() * 0.15;
-      levels[i] = Math.max(0.05, Math.min(1, base + wobble + noise));
-    } else {
-      levels[i] = 0.04 + 0.03 * Math.sin(visPhase + i * 0.5);
-    }
-  }
+    const target = raw ? raw[i] : 0;
+    const prev = prevLevels[i];
 
-  for (let i = 0; i < BAR_COUNT; i++) {
-    const level = levels[i];
-    const barHeight = Math.max(2, level * h * 0.9);
+    // подъём мгновенный, падение плавное
+    const level = target >= prev ? target : Math.max(target, prev - 0.035);
+
     const x = i * barWidth + barWidth * 0.15;
-    const y = h - barHeight;
-    const bw = barWidth * 0.7;
 
-    const gradient = ctx.createLinearGradient(0, h, 0, 0);
-    gradient.addColorStop(0, '#d44020');
-    gradient.addColorStop(1, '#f5a623');
+    // резкий спад → от верхушки отламывается кусочек и падает с гравитацией
+    if (raw && prevRaw[i] - target > BREAK_DROP && prev > 0.2) {
+      let count = 0;
+      for (const p of pieces) if (p.bar === i) count++;
+      if (count < MAX_PIECES_PER_BAR) {
+        pieces.push({ bar: i, x, w: bw, y: h - Math.max(2, prev * h * 0.9), vy: 0 });
+      }
+    }
+
+    const barHeight = Math.max(2, level * h * 0.9);
     ctx.fillStyle = gradient;
-    ctx.fillRect(x, y, bw, barHeight);
+    ctx.fillRect(x, h - barHeight, bw, barHeight);
+
+    prevLevels[i] = level;
+    prevRaw[i] = target;
   }
 
-  for (let i = 0; i < BAR_COUNT; i++) {
-    prevLevels[i] = levels[i];
+  // кусочки: падают, пока не «приземлятся» на палочку или дно
+  ctx.fillStyle = '#f5a623';
+  for (let k = pieces.length - 1; k >= 0; k--) {
+    const p = pieces[k];
+    p.vy += GRAVITY;
+    p.y += p.vy;
+
+    const barTop = h - Math.max(2, prevLevels[p.bar] * h * 0.9);
+    if (p.y + PIECE_H >= barTop || p.y > h) {
+      pieces.splice(k, 1);
+      continue;
+    }
+    ctx.fillRect(p.x, p.y, p.w, PIECE_H);
   }
 }
 drawVisualizer();
@@ -684,33 +783,64 @@ audioA.addEventListener('ended', onPlayerEnded(audioA));
 audioB.addEventListener('ended', onPlayerEnded(audioB));
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && isPlaying) checkSync();
+  if (!document.hidden && isPlaying) {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    checkSync();
+  }
 });
 
-// Сторож: эфир «играет», а плеер стоит или не двигается — перезагружаем трек с нужной секунды
-// (попеременно через прокси и напрямую). Раньше это чинилось только раз в 30 секунд и то лишь play().
+// Сторож: эфир «играет», а плеер стоит или не двигается — перезагружаем трек с нужной секунды.
+// Чтобы не срабатывать ложно:
+//  • первые 10 секунд после старта/перезагрузки загрузке не мешаем;
+//  • пока файл докачивается (буфер растёт) — это не зависание;
+//  • идёт кроссфейд, трек закончился сам ('ended') или эфир на паузе — пропускаем;
+//  • «приостановленный» AudioContext лечится resume(), а не перезагрузкой трека.
+const WD_GRACE_MS = 10000;
+const WD_STUCK_TICKS = 4;      // 4 тика по 2 с = 8 секунд без движения
 let wdLastTime = -1;
+let wdLastBuffered = -1;
 let wdStuckTicks = 0;
 let wdReloads = 0;
 let wdTrack = -1;
 
 setInterval(() => {
+  if (audioCtx && audioCtx.state === 'suspended' && isPlaying) {
+    audioCtx.resume().catch(() => {});
+  }
+
   if (!isPlaying || fadeTimer) { wdLastTime = -1; wdStuckTicks = 0; return; }
 
   const p = activePlayer;
   if (!p._state || p.ended) return;
 
-  if (wdTrack !== currentTrackIndex) { wdTrack = currentTrackIndex; wdReloads = 0; wdStuckTicks = 0; }
+  if (wdTrack !== currentTrackIndex) {
+    wdTrack = currentTrackIndex;
+    wdReloads = 0;
+    wdStuckTicks = 0;
+    wdLastTime = -1;
+    wdLastBuffered = -1;
+  }
+
+  // свежая загрузка — даём время
+  if (performance.now() - p._state.t0 < WD_GRACE_MS) {
+    wdLastTime = p.currentTime;
+    wdStuckTicks = 0;
+    return;
+  }
+
+  const bufEnd = p.buffered.length ? p.buffered.end(p.buffered.length - 1) : 0;
+  const buffering = bufEnd > wdLastBuffered + 0.5;   // файл качается — не зависание
+  wdLastBuffered = bufEnd;
 
   const stuck = p.paused || p.currentTime === wdLastTime;
   wdLastTime = p.currentTime;
 
-  if (!stuck) { wdStuckTicks = 0; return; }
+  if (!stuck || buffering) { wdStuckTicks = 0; return; }
 
   wdStuckTicks++;
   if (p.paused) p.play().catch(() => {});
 
-  if (wdStuckTicks >= 4 && wdReloads < 6) {
+  if (wdStuckTicks >= WD_STUCK_TICKS && wdReloads < 6) {
     wdStuckTicks = 0;
     wdReloads++;
     const cur = getCurrentTrack();
@@ -745,30 +875,6 @@ onValue(playlistStartedAtRef, (snapshot) => {
     tuneIn();
   }
 });
-
-// Диагностика: в консоли выполни `await checkDurations()` — сравнит реальные длины файлов
-// с trackDurations и покажет, какие треки расходятся (они и дают тишину при идущем времени).
-window.checkDurations = async () => {
-  const real = [];
-  for (let i = 0; i < RAW_PLAYLIST.length; i++) {
-    const d = await new Promise((resolve) => {
-      const a = new Audio();
-      a.preload = 'metadata';
-      const done = (v) => { a.src = ''; resolve(v); };
-      a.addEventListener('loadedmetadata', () => done(Math.round(a.duration * 100) / 100));
-      a.addEventListener('error', () => done(null));
-      setTimeout(() => done(null), 20000);
-      a.src = playlist[i];
-    });
-    real.push(d);
-  }
-  const bad = real
-    .map((r, i) => ({ track: i + 1, file: r, table: trackDurations[i] }))
-    .filter(x => x.file === null || Math.abs(x.file - x.table) > 3);
-  console.table(bad);
-  console.log('реальные длительности:', JSON.stringify(real));
-  return real;
-};
 
 // ============================================
 // ОНЛАЙН
@@ -905,6 +1011,8 @@ playBtn.addEventListener('click', () => {
     updatePlayIcon(false);
     nowPlaying.textContent = 'на паузе';
   } else {
+    // всё это — внутри клика: иначе браузер не даст запустить AudioContext и второй плеер
+    initAudio();
     unlockAudio();
     tuneIn();
   }
@@ -1389,68 +1497,43 @@ loadMurinoWeather();
 setInterval(loadMurinoWeather, 30 * 60 * 1000);
 
 // ============================================
-// СЕКРЕТНАЯ ПАСХАЛКА
+// ИЗМЕРЕНИЕ РЕАЛЬНЫХ ДЛИТЕЛЬНОСТЕЙ
 // ============================================
-const logoEl = document.getElementById('logoEl');
-const secretRoom = document.getElementById('secretRoom');
-const secretText = document.getElementById('secretText');
-const secretExit = document.getElementById('secretExit');
-const treeWrap = document.getElementById('treeWrap');
-const ptenecScreen = document.getElementById('ptenecScreen');
+// Запусти в консоли: await measureRealDurations()
+// Последовательно грузит метаданные каждого трека через прокси, печатает JSON реальных длин и
+// таблицу треков, где |реальная − trackDurations[i]| > 3 сек. trackDurations она не меняет.
+window.measureRealDurations = async () => {
+  const real = [];
 
-const treeFinished = localStorage.getItem('murino_tree_finished');
-
-if (!treeFinished) {
-  let visits = parseInt(localStorage.getItem('murino_visits') || '0');
-  visits++;
-  localStorage.setItem('murino_visits', visits.toString());
-
-  const isThirdVisit = visits >= 3;
-  const luckyRoll = Math.random() < 0.3;
-
-  if (isThirdVisit && luckyRoll) {
-    const clicksNeeded = Math.floor(Math.random() * 91) + 10;
-    let clicksDone = 0;
-
-    logoEl.classList.add('clickable');
-
-    logoEl.addEventListener('click', () => {
-      if (clicksDone >= clicksNeeded) return;
-      clicksDone++;
-
-      logoEl.style.transform = 'rotate(-1.5deg) scale(1.08)';
-      setTimeout(() => {
-        logoEl.style.transform = 'rotate(-1.5deg) scale(1)';
-      }, 100);
-
-      if (clicksDone >= clicksNeeded) {
-        secretRoom.classList.add('active');
-        logoEl.classList.remove('clickable');
-        logoEl.style.textShadow = '';
-        document.body.style.overflow = 'hidden';
-      }
+  for (let i = 0; i < playlist.length; i++) {
+    const d = await new Promise((resolve) => {
+      const a = new Audio();
+      a.crossOrigin = 'anonymous';
+      a.preload = 'metadata';
+      let finished = false;
+      const done = (v) => {
+        if (finished) return;
+        finished = true;
+        a.src = '';
+        resolve(v);
+      };
+      a.addEventListener('loadedmetadata', () => {
+        done(Number.isFinite(a.duration) ? Math.round(a.duration * 100) / 100 : null);
+      });
+      a.addEventListener('error', () => done(null));
+      setTimeout(() => done(null), 20000);
+      a.src = playlist[i];
     });
+    real.push(d);
+    console.log(`измерено ${i + 1}/${playlist.length}`);
   }
-}
 
-let treeClicks = 0;
-if (treeWrap) {
-  treeWrap.addEventListener('click', () => {
-    treeClicks++;
+  console.log(JSON.stringify(real));
 
-    if (treeClicks === 1) {
-      secretText.textContent = 'чтож, тут друн\nон дал вам чйцо';
-      secretText.style.display = 'block';
-    } else if (treeClicks === 2) {
-      secretText.textContent = 'чтож, тут нету друна';
-    }
-  });
-}
+  const bad = real
+    .map((r, i) => ({ track: i + 1, real: r, table: trackDurations[i] }))
+    .filter(x => x.real === null || Math.abs(x.real - x.table) > 3);
+  console.table(bad);
 
-if (secretExit) {
-  secretExit.addEventListener('click', () => {
-    secretRoom.classList.remove('active');
-    ptenecScreen.classList.add('active');
-    localStorage.setItem('murino_tree_finished', '1');
-  });
-}
+  return real;
+};
