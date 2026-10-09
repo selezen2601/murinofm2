@@ -110,18 +110,21 @@
       <div class="name-input-row">
         <input type="text" id="nicknameInput" placeholder="введи имя (необязательно)" maxlength="20">
       </div>
-      <div class="chat-messages" id="chatMessages"></div>
 
-      <div class="gif-panel" id="gifPanel">
-        <div class="gif-panel-header">
-          <span>🎬 ГИФКИ</span>
-          <button class="gif-panel-close" id="gifPanelClose">✕</button>
+      <div class="chat-body">
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="gif-panel" id="gifPanel">
+          <div class="gif-panel-header">
+            <span>🎬 ГИФКИ</span>
+            <button class="gif-panel-close" id="gifPanelClose">✕</button>
+          </div>
+          <div class="gif-panel-url">
+            <input type="text" id="gifUrlInput" placeholder="вставь ссылку с tenor.com (.gif)">
+            <button id="gifUrlAdd">+</button>
+          </div>
+          <div class="gif-panel-grid" id="gifPanelGrid"></div>
         </div>
-        <div class="gif-panel-url">
-          <input type="text" id="gifUrlInput" placeholder="вставь ссылку с tenor.com (.gif)">
-          <button id="gifUrlAdd">+</button>
-        </div>
-        <div class="gif-panel-grid" id="gifPanelGrid"></div>
       </div>
 
       <div class="chat-input-row">
