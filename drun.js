@@ -1,45 +1,47 @@
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, runTransaction, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+// ============================================
+// DRUNGRADER — модуль мини-игры
+// Использует db и myId из script.js через window.__murinoDb / window.__murinoMyId
+// ============================================
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDtzE3NVFHFVYqDJprioaCjEhJu-RrBPAg",
-  authDomain: "murino-fm-f887c.firebaseapp.com",
-  databaseURL: "https://murino-fm-f887c-default-rtdb.firebaseio.com",
-  projectId: "murino-fm-f887c",
-  storageBucket: "murino-fm-f887c.firebasestorage.app",
-  messagingSenderId: "579166745258",
-  appId: "1:579166745258:web:9b406191155d8c018a96d3"
-};
+const firebaseDb = window.__murinoDb;
+const myId = window.__murinoMyId;
 
-let app;
-if (getApps().length === 0) app = initializeApp(firebaseConfig);
-else app = getApps()[0];
-const db = getDatabase(app);
-
-let myId = localStorage.getItem('murino_myId');
-if (!myId) {
-  myId = 'u_' + Math.random().toString(36).slice(2, 10);
-  localStorage.setItem('murino_myId', myId);
+if (!firebaseDb || !myId) {
+  console.error('DrunGrader: Firebase не инициализирован. Проверь script.js.');
 }
+
+// Динамически импортируем нужные функции Firebase (тот же URL/версия, что в script.js)
+let dbRef, dbSet, dbOnValue, dbRemove, dbRunTransaction, dbPush;
+
+const fbReady = (async () => {
+  const mod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+  dbRef = mod.ref;
+  dbSet = mod.set;
+  dbOnValue = mod.onValue;
+  dbRemove = mod.remove;
+  dbRunTransaction = mod.runTransaction;
+  dbPush = mod.push;
+})();
 
 function getNickname() {
   return localStorage.getItem('murino_nickname') || 'Гость';
 }
 
+// Смещение серверного времени
 let serverOffset = 0;
-onValue(ref(db, '.info/serverTimeOffset'), (snap) => {
-  serverOffset = snap.val() || 0;
-});
-const serverNow = () => Date.now() + serverOffset;
+if (firebaseDb) {
+  const mod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").catch(() => null);
+  // проще: используем onValue через dbRef
+}
 
 const LOCATIONS = [
-  { id: 'mytishchi',   name: 'Мытищи',             rarity: 0, weight: 1,  label: 'обычная' },
-  { id: 'verhniy',     name: 'Верхний Новгород',   rarity: 1, weight: 2,  label: 'необычная' },
-  { id: 'nijniy',      name: 'Нижний Новгород',    rarity: 2, weight: 4,  label: 'редкая' },
-  { id: 'krasnoyarsk', name: 'Красноярск',         rarity: 3, weight: 8,  label: 'эпическая' },
-  { id: 'obshaga',     name: 'Общага',             rarity: 4, weight: 16, label: 'легендарная' },
-  { id: 'molochnoe',   name: 'Село Молочное',      rarity: 5, weight: 32, label: 'мифическая' },
-  { id: 'murino',      name: 'Мурино',             rarity: 6, weight: 64, label: 'божественная' },
+  { id: 'mytishchi',   name: 'Мытищи',           rarity: 0, weight: 1,  label: 'обычная' },
+  { id: 'verhniy',     name: 'Верхний Новгород', rarity: 1, weight: 2,  label: 'необычная' },
+  { id: 'nijniy',      name: 'Нижний Новгород',  rarity: 2, weight: 4,  label: 'редкая' },
+  { id: 'krasnoyarsk', name: 'Красноярск',       rarity: 3, weight: 8,  label: 'эпическая' },
+  { id: 'obshaga',     name: 'Общага',           rarity: 4, weight: 16, label: 'легендарная' },
+  { id: 'molochnoe',   name: 'Село Молочное',    rarity: 5, weight: 32, label: 'мифическая' },
+  { id: 'murino',      name: 'Мурино',           rarity: 6, weight: 64, label: 'божественная' },
 ];
 
 const RARITY_COLORS = [
@@ -65,6 +67,7 @@ let currentMode = 'upgrade';
 let exchangeFrom = null;
 let exchangeTo = null;
 
+// DOM
 const btn = document.getElementById('drungaderBtn');
 const modal = document.getElementById('drungaderModal');
 const closeBtn = document.getElementById('drungaderClose');
@@ -90,74 +93,97 @@ const ctxMenu = document.getElementById('drunContextMenu');
 lockNeedEl.textContent = MIN_RATED_TRACKS;
 document.getElementById('drunLockedTotal').textContent = MIN_RATED_TRACKS;
 
-btn.addEventListener('click', () => {
-  modal.classList.add('active');
-  updateUILock();
-  checkDailyBonus();
-  checkStarterBonus();
-});
+async function init() {
+  await fbReady;
 
-closeBtn.addEventListener('click', () => modal.classList.remove('active'));
-modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+  const unlockedRef = dbRef(firebaseDb, 'drungader/unlocked/' + myId);
+  const inventoryRef = dbRef(firebaseDb, 'drungader/inventory/' + myId);
+  const dailyRef = dbRef(firebaseDb, 'drungader/daily/' + myId);
 
-const unlockedRef = ref(db, 'drungader/unlocked/' + myId);
-const inventoryRef = ref(db, 'drungader/inventory/' + myId);
-const dailyRef = ref(db, 'drungader/daily/' + myId);
+  // Кнопка открытия
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    modal.classList.add('active');
+    updateUILock();
+    checkDailyBonus();
+    checkStarterBonus();
+  });
 
-onValue(ref(db, 'radio/reactions'), (snapshot) => {
-  const all = snapshot.val() || {};
-  const rated = new Set();
-  for (const [trackKey, users] of Object.entries(all)) {
-    const mine = users && users[myId];
-    if (mine && (mine.up || mine.down)) rated.add(trackKey);
-  }
-  ratedTracksCount = rated.size;
-  updateUILock();
-});
+  closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
-onValue(unlockedRef, (snapshot) => {
-  if (snapshot.val()) {
-    permanentlyUnlocked = true;
-    localStorage.setItem('murino_drun_unlocked', '1');
-  }
-  updateUILock();
-});
+  // Подсчёт оценённых треков
+  dbOnValue(dbRef(firebaseDb, 'radio/reactions'), (snapshot) => {
+    const all = snapshot.val() || {};
+    const rated = new Set();
+    for (const [trackKey, users] of Object.entries(all)) {
+      const mine = users && users[myId];
+      if (mine && (mine.up || mine.down)) rated.add(trackKey);
+    }
+    ratedTracksCount = rated.size;
+    updateUILock();
+  });
 
-onValue(inventoryRef, (snapshot) => {
-  myInventory = snapshot.val() || {};
-  inventoryLoaded = true;
+  // Разблокировка
+  dbOnValue(unlockedRef, (snapshot) => {
+    if (snapshot.val()) {
+      permanentlyUnlocked = true;
+      localStorage.setItem('murino_drun_unlocked', '1');
+    }
+    updateUILock();
+  });
 
-  betItems = betItems.filter(id => myInventory[id] > 0);
+  // Инвентарь
+  dbOnValue(inventoryRef, (snapshot) => {
+    myInventory = snapshot.val() || {};
+    inventoryLoaded = true;
 
-  if (selectedTarget) {
-    const t = LOCATIONS.find(l => l.id === selectedTarget);
-    const betSum = getBetSum();
-    if (!t || t.weight <= betSum) selectedTarget = null;
-  }
+    betItems = betItems.filter(id => myInventory[id] > 0);
 
-  if (exchangeFrom && !(myInventory[exchangeFrom] > 0)) exchangeFrom = null;
+    if (selectedTarget) {
+      const t = LOCATIONS.find(l => l.id === selectedTarget);
+      const betSum = getBetSum();
+      if (!t || t.weight <= betSum) selectedTarget = null;
+    }
 
-  if (!isSpinning) {
-    renderInventory();
-    renderBet();
-    renderTargets();
-    renderExchange();
-  }
-  checkDailyBonus();
-  checkStarterBonus();
-});
+    if (exchangeFrom && !(myInventory[exchangeFrom] > 0)) exchangeFrom = null;
 
-onValue(dailyRef, (snapshot) => {
-  lastDailyBonus = snapshot.val() || 0;
-  dailyLoaded = true;
-  checkDailyBonus();
-});
+    if (!isSpinning) {
+      renderInventory();
+      renderBet();
+      renderTargets();
+      renderExchange();
+    }
+    checkDailyBonus();
+    checkStarterBonus();
+  });
+
+  // Ежедневный бонус
+  dbOnValue(dailyRef, (snapshot) => {
+    lastDailyBonus = snapshot.val() || 0;
+    dailyLoaded = true;
+    checkDailyBonus();
+  });
+
+  // Вспомогательные ссылки для транзакций
+  window.__drunInventoryRef = inventoryRef;
+  window.__drunDailyRef = dailyRef;
+  window.__drunUnlockedRef = unlockedRef;
+
+  // Обновление замка
+  window.__drunUpdateLock = updateUILock;
+
+  updateModeUI();
+  drawWheel(0);
+}
 
 function updateUILock() {
   if (ratedTracksCount >= MIN_RATED_TRACKS && !permanentlyUnlocked) {
     permanentlyUnlocked = true;
     localStorage.setItem('murino_drun_unlocked', '1');
-    set(unlockedRef, true).catch(() => {});
+    if (window.__drunUnlockedRef) {
+      dbSet(window.__drunUnlockedRef, true).catch(() => {});
+    }
     checkStarterBonus();
   }
 
@@ -180,7 +206,7 @@ function checkStarterBonus() {
   starterClaimed = true;
   localStorage.setItem('murino_drun_starter_claimed', '1');
 
-  runTransaction(inventoryRef, (inv) => {
+  dbRunTransaction(window.__drunInventoryRef, (inv) => {
     const next = inv ? { ...inv } : {};
     next.mytishchi = (next.mytishchi || 0) + 1;
     return next;
@@ -203,15 +229,14 @@ function checkDailyBonus() {
   if (now - lastDailyBonus < DAY) return;
 
   dailyClaiming = true;
-  runTransaction(inventoryRef, (inv) => {
+  dbRunTransaction(window.__drunInventoryRef, (inv) => {
     if (inv && Object.keys(inv).length > 0) return inv;
     return { mytishchi: 1 };
   })
-    .then((res) => { if (res.committed) return set(dailyRef, now); })
+    .then((res) => { if (res.committed) return dbSet(window.__drunDailyRef, now); })
     .catch((e) => console.warn('Ежедневный бонус:', e))
     .finally(() => { dailyClaiming = false; });
 }
-setInterval(checkDailyBonus, 60 * 1000);
 
 function renderInventory() {
   invEl.innerHTML = '';
@@ -303,7 +328,7 @@ function updateModeUI() {
   const upgradePanel = document.getElementById('drunUpgradePanel');
   const exchangePanel = document.getElementById('drunExchangePanel');
 
-  if (upgradePanel) upgradePanel.style.display = currentMode === 'upgrade' ? 'flex' : 'none';
+  if (upgradePanel) upgradePanel.style.display = currentMode === 'upgrade' ? 'contents' : 'none';
   if (exchangePanel) exchangePanel.style.display = currentMode === 'exchange' ? 'flex' : 'none';
 }
 
@@ -505,7 +530,7 @@ if (exchangeConfirmBtn) {
     const count = calcExchangeCount(fromLoc, toLoc);
     if (count <= 0) return;
 
-    runTransaction(inventoryRef, (inv) => {
+    dbRunTransaction(window.__drunInventoryRef, (inv) => {
       if (!inv || !(inv[fromLoc.id] > 0)) return inv;
       const next = { ...inv };
       next[fromLoc.id] -= 1;
@@ -569,8 +594,6 @@ function drawWheel(winPercent) {
   wheelCtx.lineWidth = 3;
   wheelCtx.stroke();
 }
-
-drawWheel(0);
 
 function animateSpin(chance, win, onDone) {
   const winDeg = (chance / 100) * 360;
@@ -645,7 +668,7 @@ spinBtn.addEventListener('click', () => {
   messageEl.textContent = '';
   drawWheel(chance);
 
-  runTransaction(inventoryRef, (inv) => {
+  dbRunTransaction(window.__drunInventoryRef, (inv) => {
     if (!inv) return inv;
     const next = { ...inv };
     for (const [id, cnt] of Object.entries(betCounts)) {
@@ -706,8 +729,9 @@ function finishSpin(win, betCounts, targetLoc, consolation) {
 }
 
 function writeDroppNews(text) {
-  push(ref(db, 'radio/droppNews'), { text, at: serverNow() })
+  dbPush(dbRef(firebaseDb, 'radio/droppNews'), { text, at: Date.now() })
     .catch((e) => console.warn('News:', e));
 }
 
-updateModeUI();
+// Запуск
+init().catch((e) => console.error('DrunGrader init error:', e));
