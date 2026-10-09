@@ -1,6 +1,6 @@
 // ============================================
 // DRUNGRADER — модуль мини-игры
-// Использует db и myId из script.js через window.__murinoDb / window.__murinoMyId
+// db и myId берутся из script.js через window.__murinoDb / window.__murinoMyId
 // ============================================
 
 const firebaseDb = window.__murinoDb;
@@ -10,7 +10,6 @@ if (!firebaseDb || !myId) {
   console.error('DrunGrader: Firebase не инициализирован. Проверь script.js.');
 }
 
-// Динамически импортируем нужные функции Firebase (тот же URL/версия, что в script.js)
 let dbRef, dbSet, dbOnValue, dbRemove, dbRunTransaction, dbPush;
 
 const fbReady = (async () => {
@@ -25,13 +24,6 @@ const fbReady = (async () => {
 
 function getNickname() {
   return localStorage.getItem('murino_nickname') || 'Гость';
-}
-
-// Смещение серверного времени
-let serverOffset = 0;
-if (firebaseDb) {
-  const mod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").catch(() => null);
-  // проще: используем onValue через dbRef
 }
 
 const LOCATIONS = [
@@ -67,7 +59,6 @@ let currentMode = 'upgrade';
 let exchangeFrom = null;
 let exchangeTo = null;
 
-// DOM
 const btn = document.getElementById('drungaderBtn');
 const modal = document.getElementById('drungaderModal');
 const closeBtn = document.getElementById('drungaderClose');
@@ -100,7 +91,6 @@ async function init() {
   const inventoryRef = dbRef(firebaseDb, 'drungader/inventory/' + myId);
   const dailyRef = dbRef(firebaseDb, 'drungader/daily/' + myId);
 
-  // Кнопка открытия
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     modal.classList.add('active');
@@ -112,7 +102,6 @@ async function init() {
   closeBtn.addEventListener('click', () => modal.classList.remove('active'));
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
-  // Подсчёт оценённых треков
   dbOnValue(dbRef(firebaseDb, 'radio/reactions'), (snapshot) => {
     const all = snapshot.val() || {};
     const rated = new Set();
@@ -124,7 +113,6 @@ async function init() {
     updateUILock();
   });
 
-  // Разблокировка
   dbOnValue(unlockedRef, (snapshot) => {
     if (snapshot.val()) {
       permanentlyUnlocked = true;
@@ -133,7 +121,6 @@ async function init() {
     updateUILock();
   });
 
-  // Инвентарь
   dbOnValue(inventoryRef, (snapshot) => {
     myInventory = snapshot.val() || {};
     inventoryLoaded = true;
@@ -158,20 +145,15 @@ async function init() {
     checkStarterBonus();
   });
 
-  // Ежедневный бонус
   dbOnValue(dailyRef, (snapshot) => {
     lastDailyBonus = snapshot.val() || 0;
     dailyLoaded = true;
     checkDailyBonus();
   });
 
-  // Вспомогательные ссылки для транзакций
   window.__drunInventoryRef = inventoryRef;
   window.__drunDailyRef = dailyRef;
   window.__drunUnlockedRef = unlockedRef;
-
-  // Обновление замка
-  window.__drunUpdateLock = updateUILock;
 
   updateModeUI();
   drawWheel(0);
@@ -733,5 +715,4 @@ function writeDroppNews(text) {
     .catch((e) => console.warn('News:', e));
 }
 
-// Запуск
 init().catch((e) => console.error('DrunGrader init error:', e));
