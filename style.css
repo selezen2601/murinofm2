@@ -1283,51 +1283,6 @@ body::before {
 }
 
 /* ============================================
-   DRUNGRADER MODAL — ФИКС ПОЗИЦИИ
-   ============================================ */
-.drungader-modal {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 99999 !important;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
-  padding: 20px;
-}
-
-.drungader-modal.active {
-  display: flex !important;
-}
-
-.drungader-modal .drungader-content {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* ============================================
-   DRUNGRADER BTN — ВИДЕН И КЛИКАЕТСЯ ВЕЗДЕ
-   ============================================ */
-.drungader-btn {
-  position: fixed !important;
-  bottom: 24px !important;
-  left: 24px !important;
-  top: auto !important;
-  right: auto !important;
-  z-index: 500 !important;
-  pointer-events: auto !important;
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
-
-/* ============================================
    АДАПТАЦИЯ
    ============================================ */
 @media (max-width: 1100px) {
@@ -1347,11 +1302,13 @@ body::before {
 
 @media (max-width: 700px) {
 
+  /* --- Новости компактные --- */
   .top-news-ticker { height: 32px; }
   .top-news-label { font-size: 9px; padding: 0 10px; letter-spacing: 2px; }
   .top-news-track { font-size: 11px; }
   .top-news-track span { padding: 0 50px; }
 
+  /* --- Все верхние кнопки в один ряд под новостями --- */
   .theme-switcher,
   .extra-buttons,
   .online-badge,
@@ -1361,68 +1318,83 @@ body::before {
     transform: none;
   }
 
+  /* Темы — слева */
   .theme-switcher {
-    left: 8px; right: auto;
-    padding: 2px; gap: 2px;
+    left: 6px;
+    right: auto;
+    padding: 2px;
+    gap: 2px;
     box-shadow: 2px 2px 0 var(--shadow-color);
   }
-  .theme-btn { width: 24px; height: 24px; font-size: 11px; }
+  .theme-btn { width: 22px; height: 22px; font-size: 10px; }
 
+  /* Кнопки поддержать / проекты / Telegram — по центру */
   .extra-buttons {
-    left: 50%; right: auto;
+    left: 50%;
+    right: auto;
     transform: translateX(-50%);
-    flex-direction: row; gap: 3px; align-items: center;
+    flex-direction: row;
+    gap: 3px;
+    align-items: center;
     z-index: 20;
   }
   .extra-btn {
-    width: 26px; height: 26px;
-    padding: 0; border-radius: 4px;
-    justify-content: center; align-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
     box-shadow: 2px 2px 0 var(--shadow-color);
-    border-width: 2px; flex-shrink: 0;
+    border-width: 2px;
+    flex-shrink: 0;
   }
   .extra-text { display: none; }
-  .extra-icon { font-size: 12px; line-height: 1; }
-  .tg-btn img, .tg-btn svg { width: 14px; height: 14px; }
+  .extra-icon { font-size: 11px; line-height: 1; }
+  .tg-btn img, .tg-btn svg { width: 12px; height: 12px; }
 
+  /* Онлайн и шум — справа */
   .online-badge {
-    right: 40px;
-    font-size: 8px; padding: 4px 6px;
-    letter-spacing: 1px; gap: 4px;
+    right: 36px;
+    font-size: 7px;
+    padding: 3px 5px;
+    letter-spacing: 1px;
+    gap: 4px;
     box-shadow: 2px 2px 0 var(--shadow-color);
     z-index: 11;
   }
   .online-dot { width: 5px; height: 5px; }
 
   .noise-toggle {
-    right: 8px;
-    width: 26px; height: 26px;
-    font-size: 11px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
     box-shadow: 2px 2px 0 var(--shadow-color);
     z-index: 11;
   }
 
+  /* --- Основной контент --- */
   .radio {
-    padding: 80px 12px 100px;
+    padding: 76px 12px 90px;
     gap: 8px;
   }
 
-  .logo { font-size: 42px; margin-top: 4px; }
+  .logo { font-size: 40px; margin-top: 2px; }
   .player-box { padding: 12px; box-shadow: 5px 5px 0 var(--shadow-color); }
   .btn { width: 44px; height: 44px; }
   .btn-small { width: 32px; height: 32px; font-size: 13px; }
 
-  /* Чат — большой */
+  /* --- Чат — большой, с рабочим полем ввода --- */
   .chat-box {
     max-width: 100%;
     position: relative;
-    z-index: 10;
   }
 
   .chat-messages {
     height: 55vh;
-    min-height: 340px;
-    max-height: 700px;
+    min-height: 320px;
+    max-height: 600px;
     font-size: 13px;
     -webkit-overflow-scrolling: touch;
   }
@@ -1437,13 +1409,12 @@ body::before {
     margin-top: 6px;
   }
 
-  /* Поле ввода — работает на iOS (16px) */
+  /* Поле ввода — 16px чтобы iOS не зумил и давал ввод */
   .chat-input-row {
     position: relative;
     z-index: 20;
     background: var(--bg-paper);
   }
-
   .chat-input-row input {
     font-size: 16px !important;
     padding: 12px 14px;
@@ -1452,32 +1423,30 @@ body::before {
     border-radius: 0;
     min-width: 0;
   }
-
   .chat-input-row .gif-btn {
-    padding: 0 14px;
-    font-size: 16px;
+    padding: 0 12px;
+    font-size: 15px;
     flex-shrink: 0;
   }
-
   .chat-input-row button#chatSend {
-    padding: 0 20px;
-    font-size: 14px;
+    padding: 0 18px;
+    font-size: 13px;
     flex-shrink: 0;
   }
 
   .name-input-row input {
     font-size: 16px !important;
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
   .emoji-bar {
-    padding: 6px 10px;
-    gap: 4px;
+    padding: 5px 10px;
+    gap: 3px;
     -webkit-overflow-scrolling: touch;
   }
-  .emoji-btn { font-size: 18px; padding: 4px 6px; }
+  .emoji-btn { font-size: 16px; padding: 3px 5px; }
 
-  /* GIF-панель перекрывает чат целиком */
+  /* --- GIF-панель перекрывает чат целиком --- */
   .gif-panel {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -1494,19 +1463,26 @@ body::before {
   .gif-panel-url input { font-size: 16px !important; padding: 10px 12px; }
   .gif-panel-url button { width: 40px; font-size: 18px; }
   .gif-panel-grid {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 6px; padding: 10px 12px;
-    max-height: none; flex: 1; overflow-y: auto;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    padding: 10px 12px;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .gif-thumb { height: 90px; object-fit: cover; }
+  .gif-thumb { height: 80px; object-fit: cover; }
 
+  /* --- Футер и голосование --- */
   .footer { font-size: 8px; left: 10px; bottom: 60px; }
   .vote-popup { left: 10px; width: 220px; }
 
+  /* --- Погода — компактная, внизу справа --- */
   .weather-widget {
-    bottom: 12px; right: 12px;
-    padding: 5px 8px; gap: 5px;
+    bottom: 12px;
+    right: 12px;
+    padding: 5px 8px;
+    gap: 5px;
     box-shadow: 3px 3px 0 var(--shadow-color);
     z-index: 500;
   }
@@ -1515,6 +1491,7 @@ body::before {
   .weather-city { font-size: 7px; letter-spacing: 1px; }
   .weather-desc { font-size: 8px; }
 
+  /* --- DrunGader — внизу слева --- */
   .drungader-btn {
     position: fixed !important;
     bottom: 16px !important;
@@ -1531,6 +1508,7 @@ body::before {
   .drungader-btn-label { display: none !important; }
   .drungader-btn span:first-child { font-size: 22px !important; }
 
+  /* --- Топы — на всю ширину --- */
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
   .top-header { font-size: 9px; padding: 6px 10px; letter-spacing: 1px; }
@@ -1546,16 +1524,16 @@ body::before {
   .top-bar { font-size: 10px; letter-spacing: 2px; gap: 8px; }
 
   .theme-switcher { padding: 2px; gap: 2px; }
-  .theme-btn { width: 22px; height: 22px; font-size: 10px; }
+  .theme-btn { width: 20px; height: 20px; font-size: 10px; }
 
-  .extra-btn { width: 24px; height: 24px; }
-  .extra-icon { font-size: 11px; }
-  .tg-btn img, .tg-btn svg { width: 12px; height: 12px; }
+  .extra-btn { width: 22px; height: 22px; }
+  .extra-icon { font-size: 10px; }
+  .tg-btn img, .tg-btn svg { width: 11px; height: 11px; }
 
-  .online-badge { font-size: 7px; padding: 3px 5px; right: 36px; }
-  .noise-toggle { width: 24px; height: 24px; font-size: 10px; }
+  .online-badge { font-size: 6px; padding: 2px 4px; right: 32px; }
+  .noise-toggle { width: 22px; height: 22px; font-size: 9px; }
 
-  .chat-messages { height: 50vh; min-height: 300px; }
-  .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
-  .gif-thumb { height: 70px; }
+  .chat-messages { height: 50vh; min-height: 280px; }
+  .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); }
+  .gif-thumb { height: 65px; }
 }
