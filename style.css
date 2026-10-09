@@ -1461,3 +1461,11 @@ body::before {
   .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
   .gif-thumb { height: 70px; }
 }
+/* ФИКС: DrunGader видно на ПК */
+.drungader-btn {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
