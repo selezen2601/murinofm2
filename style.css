@@ -346,7 +346,6 @@ body::before {
 
 .extra-btn:hover .extra-icon { color: var(--bg-paper); }
 
-/* Иконка внутри кнопки Telegram (на ПК) */
 .tg-btn img,
 .tg-btn svg {
   width: 14px;
@@ -861,6 +860,9 @@ body::before {
   background: linear-gradient(90deg, #d44020, #ff5a35);
 }
 
+/* ============================================
+   ЧАТ
+   ============================================ */
 .chat-box {
   width: 100%;
   max-width: 520px;
@@ -872,6 +874,7 @@ body::before {
   flex-direction: column;
   box-shadow: 5px 5px 0 var(--shadow-color);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .chat-header {
@@ -919,6 +922,17 @@ body::before {
   margin-left: 8px;
 }
 
+/* Гифка в чате */
+.chat-gif {
+  display: block;
+  max-height: 200px;
+  max-width: 100%;
+  margin-top: 4px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-paper-2);
+}
+
 .emoji-bar {
   display: flex;
   gap: 4px;
@@ -947,6 +961,108 @@ body::before {
   transform: scale(1.2);
 }
 
+/* --- Панель гифок --- */
+.gif-panel {
+  display: none;
+  flex-direction: column;
+  background: var(--bg-paper-2);
+  border-top: 2px solid var(--border);
+  max-height: 300px;
+}
+
+.gif-panel.active { display: flex; }
+
+.gif-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-paper);
+  border-bottom: 2px solid var(--border);
+}
+
+.gif-panel-close {
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.gif-panel-close:hover { color: var(--accent); }
+
+.gif-panel-url {
+  display: flex;
+  gap: 4px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gif-panel-url input {
+  flex: 1;
+  background: var(--bg-paper);
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px;
+  outline: none;
+}
+
+.gif-panel-url input::placeholder { color: var(--text-soft); }
+
+.gif-panel-url button {
+  background: var(--accent);
+  color: var(--bg-paper);
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  width: 32px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gif-panel-url button:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--shadow-color); }
+
+.gif-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 4px;
+  padding: 8px 12px;
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.gif-panel-grid::-webkit-scrollbar { width: 6px; }
+.gif-panel-grid::-webkit-scrollbar-thumb { background: var(--border); }
+
+.gif-thumb {
+  width: 100%;
+  height: 70px;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.12s;
+  background: var(--bg-paper);
+}
+
+.gif-thumb:hover {
+  transform: scale(1.05);
+  border-color: var(--accent);
+}
+
+/* Кнопка GIF в строке ввода */
 .chat-input-row {
   display: flex;
   border-top: 2px solid var(--border);
@@ -965,7 +1081,21 @@ body::before {
 
 .chat-input-row input::placeholder { color: var(--text-soft); }
 
-.chat-input-row button {
+.chat-input-row .gif-btn {
+  background: var(--bg-paper-2);
+  border: none;
+  border-right: 2px solid var(--border);
+  color: var(--text);
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.chat-input-row .gif-btn:hover { background: var(--accent); color: var(--bg-paper); }
+
+.chat-input-row button#chatSend {
   background: var(--border);
   border: none;
   border-left: 2px solid var(--border);
@@ -979,9 +1109,9 @@ body::before {
   font-weight: 700;
 }
 
-.chat-input-row button:hover:not(:disabled) { background: var(--accent); }
+.chat-input-row button#chatSend:hover:not(:disabled) { background: var(--accent); }
 
-.chat-input-row button:disabled {
+.chat-input-row button#chatSend:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1152,7 +1282,7 @@ body::before {
 }
 
 /* ============================================
-   АДАПТАЦИЯ (ПК — не меняется, телефон — новая раскладка)
+   АДАПТАЦИЯ
    ============================================ */
 @media (max-width: 1100px) {
   .top-row {
@@ -1173,8 +1303,6 @@ body::before {
 }
 
 @media (max-width: 700px) {
-
-  /* Переключатель тем: слева сверху */
   .theme-switcher {
     top: 52px;
     left: 8px;
@@ -1189,7 +1317,6 @@ body::before {
     font-size: 12px;
   }
 
-  /* Кнопки: поддержать / проекты / Telegram — справа сверху в ряд */
   .extra-buttons {
     position: fixed;
     top: 52px;
@@ -1226,7 +1353,6 @@ body::before {
     height: 16px;
   }
 
-  /* Онлайн-бейдж — ПОД кнопками */
   .online-badge {
     position: fixed;
     top: 90px;
@@ -1240,7 +1366,6 @@ body::before {
 
   .online-dot { width: 6px; height: 6px; }
 
-  /* Кнопка шума ◐ — слева, НЕ трогает логотип */
   .noise-toggle {
     position: fixed;
     top: 90px;
@@ -1252,7 +1377,6 @@ body::before {
     z-index: 11;
   }
 
-  /* DrunGrader — вниз слева */
   .drungader-btn {
     position: fixed;
     bottom: 12px;
@@ -1266,7 +1390,6 @@ body::before {
   .drungader-btn-label { display: none; }
   .drungader-btn span:first-child { font-size: 22px; }
 
-  /* Основной контент — компактный отступ */
   .radio {
     padding: 130px 14px 90px;
     gap: 8px;
@@ -1280,7 +1403,6 @@ body::before {
   .footer { font-size: 9px; left: 12px; bottom: 90px; }
   .vote-popup { left: 10px; width: 220px; }
 
-  /* Погода — внизу справа, компактно */
   .weather-widget {
     bottom: 12px;
     right: 12px;
@@ -1308,6 +1430,11 @@ body::before {
   .top-track { min-width: 42px; font-size: 9px; }
   .top-rank { font-size: 10px; min-width: 16px; }
   .top-score { font-size: 9px; }
+
+  .gif-panel { max-height: 260px; }
+  .gif-panel-grid { max-height: 180px; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+  .gif-thumb { height: 60px; }
+  .chat-gif { max-height: 160px; }
 }
 
 @media (max-width: 380px) {
