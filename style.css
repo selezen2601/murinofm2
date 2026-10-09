@@ -15,6 +15,7 @@
   --screen-bg: #2a1f14;
   --screen-text: #c8b89a;
   --shadow-color: #2a1f14;
+  --tree-color: #2a1f14;
 }
 
 [data-theme="dark"] {
@@ -32,6 +33,7 @@
   --screen-bg: #000;
   --screen-text: #ff8c60;
   --shadow-color: #000;
+  --tree-color: #e8dfd0;
 }
 
 [data-theme="green"] {
@@ -49,6 +51,7 @@
   --screen-bg: #0a1f12;
   --screen-text: #7bc47f;
   --shadow-color: #14301e;
+  --tree-color: #14301e;
 }
 
 html, body {
@@ -343,6 +346,15 @@ body::before {
 
 .extra-btn:hover .extra-icon { color: var(--bg-paper); }
 
+/* Иконка внутри кнопки Telegram (на ПК) */
+.tg-btn img,
+.tg-btn svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  object-fit: contain;
+}
+
 .radio {
   height: 100%;
   display: flex;
@@ -403,6 +415,19 @@ body::before {
   margin-left: 10px;
   display: inline-block;
   transform: rotate(2deg);
+}
+
+.logo.clickable {
+  cursor: pointer;
+  text-shadow: 3px 3px 0 rgba(212, 64, 32, 0.6), 0 0 30px rgba(212, 64, 32, 0.4);
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+.logo.clickable:hover { transform: rotate(-1.5deg) scale(1.03); }
+
+@keyframes logoPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
 }
 
 .player-box {
@@ -1027,8 +1052,107 @@ body::before {
 }
 .weather-desc { font-size: 10px; color: var(--text); letter-spacing: 1px; }
 
+.secret-room {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  gap: 30px;
+}
+
+.secret-room.active { display: flex; }
+
+.tree-wrap {
+  width: 280px;
+  height: 280px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: var(--tree-color);
+}
+
+.tree-wrap:hover { transform: scale(1.05); }
+
+.tree-svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--tree-color);
+  stroke: var(--tree-color);
+}
+
+.secret-text {
+  font-family: 'Special Elite', serif;
+  font-size: 22px;
+  text-align: center;
+  color: var(--text);
+  max-width: 500px;
+  line-height: 1.5;
+  white-space: pre-line;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-paper);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+.secret-exit {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  background: var(--accent);
+  color: var(--bg-paper);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  transition: all 0.15s;
+  font-weight: 700;
+}
+
+.secret-exit:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--shadow-color);
+}
+
+.ptenec-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  gap: 24px;
+}
+
+.ptenec-screen.active { display: flex; }
+
+.ptenec-img {
+  max-width: 70vw;
+  max-height: 60vh;
+  border: 3px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 8px 8px 0 var(--shadow-color);
+  background: var(--bg-paper);
+}
+
+.ptenec-caption {
+  font-family: 'Special Elite', serif;
+  font-size: 20px;
+  color: var(--text);
+  text-align: center;
+}
+
 /* ============================================
-   АДАПТАЦИЯ
+   АДАПТАЦИЯ (ПК — не меняется, телефон — новая раскладка)
    ============================================ */
 @media (max-width: 1100px) {
   .top-row {
@@ -1048,46 +1172,134 @@ body::before {
   }
 }
 
-@media (max-width: 480px) {
-  .theme-switcher { top: 52px; left: 10px; padding: 4px; }
-  .theme-btn { width: 28px; height: 28px; font-size: 14px; }
-  .top-news-ticker { height: 40px; }
-  .top-news-label { font-size: 10px; padding: 0 12px; letter-spacing: 2px; }
-  .top-news-track { font-size: 12px; }
-  .top-news-track span { padding: 0 60px; }
-  .radio { padding: 58px 14px 120px; gap: 8px; }
-  .logo { font-size: 48px; }
+@media (max-width: 700px) {
+
+  /* Переключатель тем: слева сверху */
+  .theme-switcher {
+    top: 52px;
+    left: 8px;
+    padding: 3px;
+    gap: 3px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+  }
+
+  .theme-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+
+  /* Кнопки: поддержать / проекты / Telegram — справа сверху в ряд */
+  .extra-buttons {
+    position: fixed;
+    top: 52px;
+    left: auto;
+    right: 8px;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    z-index: 20;
+  }
+
+  .extra-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 4px;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    border-width: 2px;
+    flex-shrink: 0;
+  }
+
+  .extra-text { display: none; }
+
+  .extra-icon {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .tg-btn img,
+  .tg-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Онлайн-бейдж — ПОД кнопками */
+  .online-badge {
+    position: fixed;
+    top: 90px;
+    right: 8px;
+    font-size: 9px;
+    padding: 5px 8px;
+    letter-spacing: 1px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    z-index: 11;
+  }
+
+  .online-dot { width: 6px; height: 6px; }
+
+  /* Кнопка шума ◐ — слева, НЕ трогает логотип */
+  .noise-toggle {
+    position: fixed;
+    top: 90px;
+    right: 130px;
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    z-index: 11;
+  }
+
+  /* DrunGrader — вниз слева */
+  .drungader-btn {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    padding: 8px 12px;
+    font-size: 10px;
+    z-index: 50;
+    box-shadow: 3px 3px 0 var(--shadow-color);
+  }
+
+  .drungader-btn-label { display: none; }
+  .drungader-btn span:first-child { font-size: 22px; }
+
+  /* Основной контент — компактный отступ */
+  .radio {
+    padding: 130px 14px 90px;
+    gap: 8px;
+  }
+
+  .logo { font-size: 44px; margin-top: 4px; }
   .player-box { padding: 14px; box-shadow: 5px 5px 0 var(--shadow-color); }
   .btn { width: 46px; height: 46px; }
   .btn-small { width: 34px; height: 34px; font-size: 14px; }
   .chat-messages { height: 90px; font-size: 12px; }
-  .online-badge { font-size: 10px; padding: 8px 12px; top: 52px; right: 58px; }
-  .noise-toggle { width: 38px; height: 38px; top: 52px; right: 10px; }
-  .footer { font-size: 9px; left: 12px; bottom: 8px; }
-
-  .extra-buttons { top: 100px; right: 10px; gap: 6px; }
-  .extra-btn {
-    padding: 6px 10px;
-    font-size: 9px;
-    letter-spacing: 1px;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-  }
-  .extra-text { display: none; }
-  .extra-icon { font-size: 16px; }
-
-  .weather-widget {
-    bottom: 44px;
-    right: 10px;
-    padding: 8px 12px;
-    box-shadow: 3px 3px 0 var(--shadow-color);
-  }
-  .weather-icon { font-size: 22px; }
-  .weather-temp { font-size: 15px; }
-  .weather-desc { font-size: 9px; }
-
+  .footer { font-size: 9px; left: 12px; bottom: 90px; }
   .vote-popup { left: 10px; width: 220px; }
 
-  /* Топы на телефоне — компактные */
+  /* Погода — внизу справа, компактно */
+  .weather-widget {
+    bottom: 12px;
+    right: 12px;
+    padding: 6px 10px;
+    gap: 6px;
+    box-shadow: 3px 3px 0 var(--shadow-color);
+    z-index: 10;
+  }
+
+  .weather-icon { font-size: 20px; }
+  .weather-temp { font-size: 14px; }
+  .weather-city { font-size: 8px; letter-spacing: 2px; }
+  .weather-desc { font-size: 9px; }
+
+  .top-news-ticker { height: 40px; }
+  .top-news-label { font-size: 10px; padding: 0 12px; letter-spacing: 2px; }
+  .top-news-track { font-size: 12px; }
+  .top-news-track span { padding: 0 60px; }
+
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
   .top-header { font-size: 9px; padding: 6px 10px; letter-spacing: 1px; }
@@ -1099,7 +1311,7 @@ body::before {
 }
 
 @media (max-width: 380px) {
-  .logo { font-size: 40px; letter-spacing: -2px; }
+  .logo { font-size: 38px; letter-spacing: -2px; }
   .top-bar { font-size: 10px; letter-spacing: 2px; gap: 8px; }
   .chat-messages { height: 70px; }
 }
