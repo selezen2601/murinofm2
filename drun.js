@@ -1,6 +1,3 @@
-// ============================================
-// DRUNGRADER — апгрейдер локаций (мультиставка + обмен)
-// ============================================
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove, runTransaction, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -35,9 +32,6 @@ onValue(ref(db, '.info/serverTimeOffset'), (snap) => {
 });
 const serverNow = () => Date.now() + serverOffset;
 
-// ============================================
-// ЛОКАЦИИ (вес вместо редкости)
-// ============================================
 const LOCATIONS = [
   { id: 'mytishchi',   name: 'Мытищи',             rarity: 0, weight: 1,  label: 'обычная' },
   { id: 'verhniy',     name: 'Верхний Новгород',   rarity: 1, weight: 2,  label: 'необычная' },
@@ -55,9 +49,6 @@ const RARITY_COLORS = [
 const MIN_RATED_TRACKS = 10;
 const MAX_BET_ITEMS = 5;
 
-// ============================================
-// СОСТОЯНИЕ
-// ============================================
 let myInventory = {};
 let ratedTracksCount = 0;
 let betItems = [];
@@ -74,9 +65,6 @@ let currentMode = 'upgrade';
 let exchangeFrom = null;
 let exchangeTo = null;
 
-// ============================================
-// DOM
-// ============================================
 const btn = document.getElementById('drungaderBtn');
 const modal = document.getElementById('drungaderModal');
 const closeBtn = document.getElementById('drungaderClose');
@@ -99,17 +87,9 @@ const modeUpgradeBtn = document.getElementById('drunModeUpgrade');
 const modeExchangeBtn = document.getElementById('drunModeExchange');
 const ctxMenu = document.getElementById('drunContextMenu');
 
-const clickerEl = document.getElementById('drunClicker');
-const clickCountEl = document.getElementById('drunClickCount');
-const clickNextEl = document.getElementById('drunClickNext');
-const clickBtn = document.getElementById('drunClickBtn');
-
 lockNeedEl.textContent = MIN_RATED_TRACKS;
 document.getElementById('drunLockedTotal').textContent = MIN_RATED_TRACKS;
 
-// ============================================
-// ОТКРЫТИЕ / ЗАКРЫТИЕ
-// ============================================
 btn.addEventListener('click', () => {
   modal.classList.add('active');
   updateUILock();
@@ -120,9 +100,6 @@ btn.addEventListener('click', () => {
 closeBtn.addEventListener('click', () => modal.classList.remove('active'));
 modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
-// ============================================
-// FIREBASE
-// ============================================
 const unlockedRef = ref(db, 'drungader/unlocked/' + myId);
 const inventoryRef = ref(db, 'drungader/inventory/' + myId);
 const dailyRef = ref(db, 'drungader/daily/' + myId);
@@ -176,9 +153,6 @@ onValue(dailyRef, (snapshot) => {
   checkDailyBonus();
 });
 
-// ============================================
-// РАЗБЛОКИРОВКА
-// ============================================
 function updateUILock() {
   if (ratedTracksCount >= MIN_RATED_TRACKS && !permanentlyUnlocked) {
     permanentlyUnlocked = true;
@@ -190,19 +164,14 @@ function updateUILock() {
   if (permanentlyUnlocked) {
     lockedEl.style.display = 'none';
     gameEl.style.display = 'grid';
-    clickerEl.style.display = '';
   } else {
     lockedEl.style.display = 'flex';
     gameEl.style.display = 'none';
-    clickerEl.style.display = 'none';
     lockDoneEl.textContent = ratedTracksCount;
     lockBarEl.style.width = Math.min(100, (ratedTracksCount / MIN_RATED_TRACKS) * 100) + '%';
   }
 }
 
-// ============================================
-// СТАРТОВЫЙ БОНУС (1 Мытищи при разблокировке)
-// ============================================
 function checkStarterBonus() {
   if (!inventoryLoaded) return;
   if (!permanentlyUnlocked) return;
@@ -225,9 +194,6 @@ function checkStarterBonus() {
     .catch((e) => console.warn('Стартовый бонус:', e));
 }
 
-// ============================================
-// ЕЖЕДНЕВНЫЙ БОНУС
-// ============================================
 function checkDailyBonus() {
   if (!inventoryLoaded || !dailyLoaded || dailyClaiming || isSpinning) return;
   if (Object.keys(myInventory).length > 0) return;
@@ -247,9 +213,6 @@ function checkDailyBonus() {
 }
 setInterval(checkDailyBonus, 60 * 1000);
 
-// ============================================
-// ИНВЕНТАРЬ
-// ============================================
 function renderInventory() {
   invEl.innerHTML = '';
   const owned = LOCATIONS.filter(loc => myInventory[loc.id] > 0);
@@ -292,9 +255,6 @@ function renderInventory() {
   });
 }
 
-// ============================================
-// КОНТЕКСТНОЕ МЕНЮ
-// ============================================
 function openContextMenu(x, y, locId) {
   ctxMenu.innerHTML = `
     <div class="drun-ctx-item" data-action="upgrade">В апгрейд</div>
@@ -336,9 +296,6 @@ document.addEventListener('click', (e) => {
   if (!ctxMenu.contains(e.target)) closeContextMenu();
 });
 
-// ============================================
-// ПЕРЕКЛЮЧАТЕЛЬ РЕЖИМОВ
-// ============================================
 function updateModeUI() {
   if (modeUpgradeBtn) modeUpgradeBtn.classList.toggle('active', currentMode === 'upgrade');
   if (modeExchangeBtn) modeExchangeBtn.classList.toggle('active', currentMode === 'exchange');
@@ -366,9 +323,6 @@ if (modeExchangeBtn) {
   });
 }
 
-// ============================================
-// СТАВКА (для апгрейда) — сумма по весу
-// ============================================
 function getBetSum() {
   return betItems.reduce((sum, id) => {
     const loc = LOCATIONS.find(l => l.id === id);
@@ -409,9 +363,6 @@ function renderBet() {
   if (betSumEl) betSumEl.textContent = 'сумма: ' + getBetSum();
 }
 
-// ============================================
-// ЦЕЛИ (для апгрейда)
-// ============================================
 function renderTargets() {
   targetsEl.innerHTML = '';
 
@@ -442,9 +393,6 @@ function renderTargets() {
   updateChance();
 }
 
-// ============================================
-// ШАНС
-// ============================================
 function getChance(betWeight, targetRarity) {
   const targetLoc = LOCATIONS.find(l => l.rarity === targetRarity);
   if (!targetLoc) return 0;
@@ -476,9 +424,6 @@ function updateChance() {
   spinBtn.disabled = false;
 }
 
-// ============================================
-// ОБМЕН
-// ============================================
 function calcExchangeCount(fromLoc, toLoc) {
   let count = Math.floor(fromLoc.weight / toLoc.weight);
   if (toLoc.id === 'mytishchi') count *= 2;
@@ -590,9 +535,6 @@ if (exchangeConfirmBtn) {
   });
 }
 
-// ============================================
-// КОЛЕСО
-// ============================================
 function drawWheel(winPercent) {
   const w = wheelCanvas.width, h = wheelCanvas.height;
   const cx = w / 2, cy = h / 2, r = w / 2 - 10;
@@ -630,9 +572,6 @@ function drawWheel(winPercent) {
 
 drawWheel(0);
 
-// ============================================
-// КРУТКА
-// ============================================
 function animateSpin(chance, win, onDone) {
   const winDeg = (chance / 100) * 360;
   const stopDeg = win
@@ -771,102 +710,4 @@ function writeDroppNews(text) {
     .catch((e) => console.warn('News:', e));
 }
 
-// ============================================
-// КЛИКЕР
-// ============================================
-const CLICKS_KEY = 'murino_drun_clicks';
-const CLICKS_CLAIMED_KEY = 'murino_drun_clicks_claimed';
-
-// Награды: 50 → Мытищи, 100 → Верхний Новгород, 150 → Мытищи, 200 → Нижний Новгород,
-// дальше каждые 100 кликов → Нижний Новгород
-const FIXED_CLICK_REWARDS = [
-  { at: 50,  loc: 'mytishchi' },
-  { at: 100, loc: 'verhniy' },
-  { at: 150, loc: 'mytishchi' },
-  { at: 200, loc: 'nijniy' },
-];
-
-// k-я награда (с нуля)
-function clickRewardAt(k) {
-  if (k < FIXED_CLICK_REWARDS.length) return FIXED_CLICK_REWARDS[k];
-  const last = FIXED_CLICK_REWARDS[FIXED_CLICK_REWARDS.length - 1];
-  return { at: last.at + 100 * (k - FIXED_CLICK_REWARDS.length + 1), loc: 'nijniy' };
-}
-
-function readStoredInt(key) {
-  const n = parseInt(localStorage.getItem(key), 10);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
-
-let clickCount = readStoredInt(CLICKS_KEY);
-// Индекс следующей НЕ выданной награды. Хранится отдельно от счётчика — по нему после перезагрузки
-// понятно, что уже выдано (одну награду дважды не получить), а что ещё нет.
-let clickRewardIdx = readStoredInt(CLICKS_CLAIMED_KEY);
-let clickGranting = false;
-
-function renderClicker() {
-  clickCountEl.textContent = clickCount;
-  const next = clickRewardAt(clickRewardIdx);
-  const loc = LOCATIONS.find(l => l.id === next.loc);
-  const need = Math.max(0, next.at - clickCount);
-  clickNextEl.textContent = `ещё ${need} → ${loc ? loc.name : next.loc}`;
-}
-
-// Выдаём все накопленные, но ещё не выданные награды — по одной, транзакцией
-function grantClickRewards() {
-  if (clickGranting) return;
-
-  const reward = clickRewardAt(clickRewardIdx);
-  if (clickCount < reward.at) return;
-
-  clickGranting = true;
-  let granted = false;
-
-  // Индекс сдвигаем и сохраняем ДО записи в базу: если вкладку закроют посреди транзакции,
-  // награда не выдастся дважды. Если запись не удалась — откатываем и попробуем снова.
-  const grantedIdx = clickRewardIdx;
-  clickRewardIdx = grantedIdx + 1;
-  localStorage.setItem(CLICKS_CLAIMED_KEY, String(clickRewardIdx));
-
-  runTransaction(inventoryRef, (inv) => {
-    const next = inv ? { ...inv } : {};
-    next[reward.loc] = (next[reward.loc] || 0) + 1;
-    return next;
-  })
-    .then((res) => {
-      if (!res.committed) throw new Error('транзакция не применена');
-      granted = true;
-      const loc = LOCATIONS.find(l => l.id === reward.loc);
-      messageEl.textContent = `🖱 ${reward.at} кликов: +1 ${loc ? loc.name : reward.loc}`;
-      messageEl.style.color = '#3aa850';
-    })
-    .catch((e) => {
-      console.warn('Награда за клики не выдана, повторю:', e);
-      clickRewardIdx = grantedIdx;
-      localStorage.setItem(CLICKS_CLAIMED_KEY, String(grantedIdx));
-    })
-    .finally(() => {
-      clickGranting = false;
-      renderClicker();
-      // накопилось несколько наград (оффлайн/перезагрузка) — выдаём следующую.
-      // При ошибке не крутимся в цикле: повтор сделает таймер раз в 5 секунд.
-      if (granted) grantClickRewards();
-    });
-}
-
-clickBtn.addEventListener('click', () => {
-  clickCount++;
-  localStorage.setItem(CLICKS_KEY, String(clickCount));
-  renderClicker();
-  grantClickRewards();
-
-  clickBtn.classList.add('pressed');
-  setTimeout(() => clickBtn.classList.remove('pressed'), 80);
-});
-
-renderClicker();
-// награды, заработанные до перезагрузки, но не выданные (ждём загрузки инвентаря)
-setInterval(() => { if (permanentlyUnlocked && inventoryLoaded) grantClickRewards(); }, 5000);
-
-// Стартовый режим
 updateModeUI();
