@@ -21,7 +21,7 @@ document.querySelectorAll('[data-theme-btn]').forEach(btn => {
 });
 
 // ============================================
-// FIREBASE (единственная инициализация)
+// FIREBASE
 // ============================================
 const firebaseConfig = {
   apiKey: "AIzaSyDtzE3NVFHFVYqDJprioaCjEhJu-RrBPAg",
@@ -36,7 +36,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Экспортируем для drun.js
 window.__murinoDb = db;
 
 let myId = localStorage.getItem('murino_myId');
@@ -432,7 +431,7 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0, trackIndex = currentTrac
 }
 
 // ============================================
-// ВИЗУАЛИЗАТОР (рисует ТОЛЬКО когда играет)
+// ВИЗУАЛИЗАТОР — только когда играет
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
@@ -544,7 +543,7 @@ function stopVisualizer() {
   pieces.length = 0;
 }
 
-// Временный запуск для показа плоской линии при загрузке
+// стартовая плоская линия
 ctx.fillStyle = '#f5a623';
 for (let i = 0; i < BAR_COUNT; i++) {
   const barWidth = canvas.width / BAR_COUNT;
@@ -552,35 +551,51 @@ for (let i = 0; i < BAR_COUNT; i++) {
 }
 
 // ============================================
-// ФОНОВЫЙ ШУМ (рисуем один раз, не каждый кадр)
+// ФОНОВЫЙ ШУМ — анимированный, но throttled (~8 fps) и в низком разрешении
 // ============================================
 const bgCanvas = document.getElementById('bgNoise');
 const bgCtx = bgCanvas.getContext('2d');
 const noiseToggle = document.getElementById('noiseToggle');
 let noiseEnabled = true;
+let noiseFrameId = null;
+let lastNoiseDraw = 0;
+const NOISE_INTERVAL = 125; // ~8 fps
 
 function resizeBg() {
-  bgCanvas.width = window.innerWidth;
-  bgCanvas.height = window.innerHeight;
-  if (noiseEnabled) drawBgNoiseOnce();
+  // рисуем в низком разрешении — canvas растягивается через CSS
+  const w = Math.min(window.innerWidth, 480);
+  const h = Math.min(window.innerHeight, 480);
+  bgCanvas.width = w;
+  bgCanvas.height = h;
 }
 resizeBg();
 
-let bgNoiseResizeTimer = null;
+let bgResizeTimer = null;
 window.addEventListener('resize', () => {
-  clearTimeout(bgNoiseResizeTimer);
-  bgNoiseResizeTimer = setTimeout(resizeBg, 250);
+  clearTimeout(bgResizeTimer);
+  bgResizeTimer = setTimeout(resizeBg, 250);
 });
 
-function drawBgNoiseOnce() {
+let noiseBuffer = null;
+
+function initNoiseBuffer() {
   const w = bgCanvas.width;
   const h = bgCanvas.height;
-  // Уменьшаем разрешение шума для экономии памяти/трафика — растягивается до полного
-  const step = 2;
-  const smallW = Math.ceil(w / step);
-  const smallH = Math.ceil(h / step);
+  const imageData = bgCtx.createImageData(w, h);
+  noiseBuffer = new Uint32Array(imageData.data.buffer);
+  return imageData;
+}
 
-  const imageData = bgCtx.createImageData(smallW, smallH);
+function drawBgNoise(time) {
+  if (!noiseEnabled) return;
+  noiseFrameId = requestAnimationFrame(drawBgNoise);
+
+  if (time - lastNoiseDraw < NOISE_INTERVAL) return;
+  lastNoiseDraw = time;
+
+  const w = bgCanvas.width;
+  const h = bgCanvas.height;
+  const imageData = bgCtx.createImageData(w, h);
   const buffer = new Uint32Array(imageData.data.buffer);
 
   for (let i = 0; i < buffer.length; i++) {
@@ -588,29 +603,43 @@ function drawBgNoiseOnce() {
     buffer[i] = (255 << 24) | (v << 16) | (v << 8) | v;
   }
 
-  // Рисуем шум в маленький оффскрин, потом растягиваем
-  const off = document.createElement('canvas');
-  off.width = smallW;
-  off.height = smallH;
-  off.getContext('2d').putImageData(imageData, 0, 0);
-
-  bgCtx.imageSmoothingEnabled = true;
-  bgCtx.clearRect(0, 0, w, h);
-  bgCtx.drawImage(off, 0, 0, w, h);
+  bgCtx.putImageData(imageData, 0, 0);
 }
 
-drawBgNoiseOnce();
+function startNoise() {
+  if (noiseFrameId) return;
+  lastNoiseDraw = 0;
+  noiseFrameId = requestAnimationFrame(drawBgNoise);
+}
+
+function stopNoise() {
+  if (noiseFrameId) {
+    cancelAnimationFrame(noiseFrameId);
+    noiseFrameId = null;
+  }
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+}
+
+startNoise();
 
 noiseToggle.addEventListener('click', () => {
   noiseEnabled = !noiseEnabled;
   if (noiseEnabled) {
     noiseToggle.classList.remove('off');
     noiseToggle.textContent = '◐';
-    drawBgNoiseOnce();
+    startNoise();
   } else {
     noiseToggle.classList.add('off');
     noiseToggle.textContent = '○';
-    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    stopNoise();
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopNoise();
+  } else {
+    if (noiseEnabled) startNoise();
   }
 });
 
@@ -669,19 +698,15 @@ function showNextNews() {
 }
 
 showNextNews();
-let newsInterval = null;
-function startNewsTimer() {
-  if (newsInterval) clearInterval(newsInterval);
-  newsInterval = setInterval(showNextNews, 30000);
-}
-function stopNewsTimer() {
-  if (newsInterval) { clearInterval(newsInterval); newsInterval = null; }
-}
-startNewsTimer();
+let newsInterval = setInterval(showNextNews, 30000);
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopNewsTimer();
-  else startNewsTimer();
+  if (document.hidden) {
+    clearInterval(newsInterval);
+    newsInterval = null;
+  } else {
+    if (!newsInterval) newsInterval = setInterval(showNextNews, 30000);
+  }
 });
 
 // ============================================
@@ -1095,15 +1120,16 @@ function updateSendButton() {
   }
 }
 
-let sendBtnInterval = null;
+let sendBtnInterval = setInterval(updateSendButton, 200);
+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    if (sendBtnInterval) { clearInterval(sendBtnInterval); sendBtnInterval = null; }
+    clearInterval(sendBtnInterval);
+    sendBtnInterval = null;
   } else {
     if (!sendBtnInterval) sendBtnInterval = setInterval(updateSendButton, 200);
   }
 });
-sendBtnInterval = setInterval(updateSendButton, 200);
 
 function sendMessage() {
   const text = chatInput.value.trim();
@@ -1472,9 +1498,7 @@ function renderTopList(elementId, items, isWorst, startRank) {
 // ============================================
 let lastVoteKey = null;
 let lastReactionKey = null;
-let trackUiInterval = null;
-
-function tickTrackUi() {
+let trackUiInterval = setInterval(() => {
   const vk = currentVoteKey();
   const rk = currentReactionKey();
 
@@ -1487,15 +1511,29 @@ function tickTrackUi() {
     lastReactionKey = rk;
     updateReactionsUI();
   }
-}
-
-trackUiInterval = setInterval(tickTrackUi, 1000);
+}, 1000);
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
-    if (trackUiInterval) { clearInterval(trackUiInterval); trackUiInterval = null; }
+    clearInterval(trackUiInterval);
+    trackUiInterval = null;
   } else {
-    if (!trackUiInterval) trackUiInterval = setInterval(tickTrackUi, 1000);
+    if (!trackUiInterval) {
+      trackUiInterval = setInterval(() => {
+        const vk = currentVoteKey();
+        const rk = currentReactionKey();
+
+        if (vk !== lastVoteKey) {
+          lastVoteKey = vk;
+          votePopup.classList.remove('active');
+          updateVoteUI();
+        }
+        if (rk !== lastReactionKey) {
+          lastReactionKey = rk;
+          updateReactionsUI();
+        }
+      }, 1000);
+    }
   }
 });
 
