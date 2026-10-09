@@ -43,7 +43,7 @@ if (!myId) {
 }
 
 // ============================================
-// ПЛЕЙЛИСТ (81 трек через прокси Vercel)
+// ПЛЕЙЛИСТ
 // ============================================
 const PROXY = 'https://murino-fm-rho.vercel.app/api/proxy?url=';
 
@@ -143,15 +143,29 @@ const trackDurations = [
   33, 31, 33, 45, 33, 260, 1103, 198, 52, 3599
 ];
 
-// Страховка: у каждого трека должна быть и ссылка, и длительность.
-// Лишняя длительность без файла (сейчас: 81-я, 3599 сек при 80 ссылках) раньше давала
-// почти час «эфира» с src=undefined — время идёт, звука нет. Лишнее отбрасываем.
 if (trackDurations.length !== RAW_PLAYLIST.length) {
-  console.warn(`В плейлисте ${RAW_PLAYLIST.length} треков, а длительностей ${trackDurations.length}. ` +
-    `Лишние в конце отброшены. Если пропала ссылка в середине списка — все длительности после неё сдвинуты, ` +
-    `запусти await measureRealDurations() в консоли.`);
+  console.warn(`В плейлисте ${RAW_PLAYLIST.length} треков, а длительностей ${trackDurations.length}.`);
   if (trackDurations.length > RAW_PLAYLIST.length) trackDurations.length = RAW_PLAYLIST.length;
 }
+
+// ============================================
+// ГИФКИ (стартовый набор)
+// ============================================
+const STARTER_GIFS = [
+  "https://media1.tenor.com/m/pcZVzLAnLPUAAAAd/мел-строй-stroy-меллстрой.gif",
+  "https://media1.tenor.com/m/z-bVtSXeqFgAAAAd/mellstroy.gif",
+  "https://media1.tenor.com/m/Itn_Fayp4VkAAAAd/мелстрой-я-помылся-смех-мелстрой.gif",
+  "https://media1.tenor.com/m/zeBITLNg2HcAAAAd/mellstroy-тёмный-друн.gif",
+  "https://media1.tenor.com/m/If8mUatVQaUAAAAd/мелстрой-мелстрой-красный.gif",
+  "https://media1.tenor.com/m/TTBejdQST6IAAAAd/мелстрой-танцуем-все.gif",
+  "https://media.tenor.com/aTJNTRDC6q0AAAAi/крутящейся-котость-меллстрой.gif",
+  "https://media1.tenor.com/m/5k6HonPcjdsAAAAd/mellstroy-мурино.gif",
+  "https://media1.tenor.com/m/MwbXRmNkEU0AAAAC/mellstroyomaygad-mellstroy-omaygad.gif",
+  "https://media1.tenor.com/m/zvs5qanKqrsAAAAd/mell-mellstroy.gif",
+  "https://media1.tenor.com/m/MMxtux-bHBEAAAAd/bravo-wow.gif",
+  "https://media1.tenor.com/m/Vnxd8di1CWoAAAAC/mellstroy.gif",
+  "https://media1.tenor.com/m/bXjzL5fdskwAAAAd/mellstroy.gif"
+];
 
 // ============================================
 // НОВОСТИ
@@ -216,11 +230,10 @@ function shuffleArray(arr) {
 const shuffledNews = shuffleArray(news);
 
 // ============================================
-// ДВА АУДИО (crossOrigin нужен Web Audio API; играем ТОЛЬКО через прокси с CORS)
+// ДВА АУДИО
 // ============================================
 const audioA = new Audio();
 const audioB = new Audio();
-// Без crossOrigin AnalyserNode получает нули (а источник вообще глушится) — ставим до любого src
 audioA.crossOrigin = 'anonymous';
 audioB.crossOrigin = 'anonymous';
 audioA.volume = 0.8;
@@ -236,14 +249,12 @@ const FADE_INTERVAL = FADE_TIME / FADE_STEPS;
 
 let fadeTimer = null;
 
-// --- Web Audio API: audioA/audioB → masterGain → analyser → колонки ---
 let audioCtx = null;
 let masterGain = null;
 let analyser = null;
 let freqData = null;
 let webAudioOk = false;
 
-// Вызывать из обработчика клика: AudioContext нельзя запускать без жеста пользователя
 function initAudio() {
   if (!audioCtx) {
     let srcA = null;
@@ -269,9 +280,8 @@ function initAudio() {
 
       webAudioOk = true;
     } catch (e) {
-      console.warn('Web Audio не запустился, визуализатор покажет плоские линии:', e);
+      console.warn('Web Audio не запустился:', e);
       webAudioOk = false;
-      // Если плеер уже ушёл в граф, а граф не собрался — выведем звук напрямую, иначе будет тишина
       try { if (srcA) srcA.connect(audioCtx.destination); } catch (e2) {}
       try { if (srcB) srcB.connect(audioCtx.destination); } catch (e2) {}
     }
@@ -282,10 +292,6 @@ function initAudio() {
   }
 }
 
-// --- Разблокировка обоих плееров ---
-// Браузеры (особенно iOS Safari) разрешают play() только для элемента, который уже запускали
-// по клику. Второй плеер (audioB) раньше впервые стартовал уже из таймера — и молча блокировался:
-// каждый второй трек шёл без звука, хотя время эфира бежало.
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAIlYAAESsAAACABAAZGF0YQAAAAA=';
 let audioUnlocked = false;
 
@@ -298,17 +304,13 @@ function unlockAudio() {
     const p = a.play();
     if (p && p.then) {
       p.then(() => { a.pause(); a.muted = false; })
-       .catch(() => { a.muted = false; });   // AbortError: src уже заменили настоящим треком — это нормально
+       .catch(() => { a.muted = false; });
     } else {
       a.muted = false;
     }
   }
 }
 
-// --- Загрузка трека с повторами ---
-// Только через прокси: прямой cdn.dbimg.app не отдаёт CORS-заголовков, а с crossOrigin='anonymous'
-// такой файл либо не загрузится, либо Web Audio выдаст тишину. Повторные попытки добавляют
-// к адресу &_r=N (прокси его игнорирует) — это обходит закешированный сбой на краю CDN.
 const MAX_LOAD_ATTEMPTS = 4;
 const durationWarned = new Set();
 
@@ -333,14 +335,12 @@ function startPlayback(player, trackIndex, startAt, attempt = 0) {
   const seekAndPlay = () => {
     if (!isPlaying || player._state !== state) return;
 
-    // реальная длина файла не совпала с таблицей — главная причина «играет, но тишина»
     const real = player.duration;
     if (Number.isFinite(real) && Math.abs(real - trackDurations[trackIndex]) > 3 && !durationWarned.has(trackIndex)) {
       durationWarned.add(trackIndex);
       console.warn(`Трек ${trackIndex + 1}: файл ${real.toFixed(1)} с, в trackDurations ${trackDurations[trackIndex]} с`);
     }
 
-    // позиция эфира «сейчас» с учётом времени, потраченного на загрузку
     const want = startAt + (performance.now() - state.t0) / 1000;
     if (want > 0.5) {
       try { player.currentTime = want; } catch (e) {}
@@ -349,7 +349,7 @@ function startPlayback(player, trackIndex, startAt, attempt = 0) {
     const pr = player.play();
     if (pr && pr.catch) {
       pr.catch((err) => {
-        if (err && err.name === 'AbortError') return;   // источник сменился — не ошибка
+        if (err && err.name === 'AbortError') return;
         onPlaybackFail(player, state, err);
       });
     }
@@ -367,9 +367,8 @@ function startPlayback(player, trackIndex, startAt, attempt = 0) {
 
 function onPlaybackFail(player, state, err) {
   if (!isPlaying || player._state !== state) return;
-  console.warn(`Трек ${state.trackIndex + 1}: ошибка воспроизведения (попытка ${state.attempt + 1}):`, err);
+  console.warn(`Трек ${state.trackIndex + 1}: ошибка (попытка ${state.attempt + 1}):`, err);
 
-  // Браузер заблокировал звук — повторять бессмысленно, нужен клик
   if (err && err.name === 'NotAllowedError') {
     stopTimers();
     isPlaying = false;
@@ -387,7 +386,7 @@ function onPlaybackFail(player, state, err) {
   setTimeout(() => {
     if (!isPlaying || player._state !== state) return;
     const cur = getCurrentTrack();
-    if (!cur || cur.index !== state.trackIndex) return;   // трек уже сменился — tuneIn разберётся сам
+    if (!cur || cur.index !== state.trackIndex) return;
     startPlayback(player, state.trackIndex, cur.position, next);
   }, 400 * next);
 }
@@ -427,29 +426,26 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0, trackIndex = currentTrac
 }
 
 // ============================================
-// ВИЗУАЛИЗАТОР (Web Audio API — настоящий спектр звука)
+// ВИЗУАЛИЗАТОР
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
 
 const BAR_COUNT = 24;
-const BREAK_DROP = 0.12;      // насколько резко должна упасть палочка, чтобы отломился кусочек
-const PIECE_H = 4;            // высота отломившегося кусочка, px
-const GRAVITY = 0.45;         // ускорение падения кусочка
+const BREAK_DROP = 0.12;
+const PIECE_H = 4;
+const GRAVITY = 0.45;
 const MAX_PIECES_PER_BAR = 3;
 
-let prevLevels = new Array(BAR_COUNT).fill(0);   // отображаемый уровень каждой палочки
-let prevRaw = new Array(BAR_COUNT).fill(0);      // «сырой» уровень на прошлом кадре
-const pieces = [];                                // отломившиеся верхушки
+let prevLevels = new Array(BAR_COUNT).fill(0);
+let prevRaw = new Array(BAR_COUNT).fill(0);
+const pieces = [];
 
-// Спектр → BAR_COUNT уровней 0..1. null — нет данных (граф не запущен): рисуем плоские линии
 function readSpectrum() {
   if (!webAudioOk || !analyser) return null;
 
   analyser.getByteFrequencyData(freqData);
 
-  // Полезная музыкальная часть — нижние ~44 из 64 бинов; палочки распределены логарифмически:
-  // низким частотам больше места, как в обычном эквалайзере
   const usable = Math.min(freqData.length, 44);
   const out = new Array(BAR_COUNT);
 
@@ -465,8 +461,6 @@ function readSpectrum() {
       if (v > max) max = v;
     }
     const avg = sum / (hi - lo);
-
-    // небольшой подъём высоких, иначе они всегда ниже басов
     const tilt = 0.8 + 0.6 * (i / BAR_COUNT);
     out[i] = Math.min(1, ((avg + max) / 2 / 255) * tilt);
   }
@@ -492,12 +486,10 @@ function drawVisualizer() {
     const target = raw ? raw[i] : 0;
     const prev = prevLevels[i];
 
-    // подъём мгновенный, падение плавное
     const level = target >= prev ? target : Math.max(target, prev - 0.035);
 
     const x = i * barWidth + barWidth * 0.15;
 
-    // резкий спад → от верхушки отламывается кусочек и падает с гравитацией
     if (raw && prevRaw[i] - target > BREAK_DROP && prev > 0.2) {
       let count = 0;
       for (const p of pieces) if (p.bar === i) count++;
@@ -514,7 +506,6 @@ function drawVisualizer() {
     prevRaw[i] = target;
   }
 
-  // кусочки: падают, пока не «приземлятся» на палочку или дно
   ctx.fillStyle = '#f5a623';
   for (let k = pieces.length - 1; k >= 0; k--) {
     const p = pieces[k];
@@ -768,12 +759,11 @@ function checkSync() {
 
 function onPlayerEnded(player) {
   return () => {
-    if (!player._state) return;   // заглушка разблокировки или уже вытесненный плеер
+    if (!player._state) return;
     if (player === activePlayer && isPlaying) {
       const cur = getCurrentTrack();
       if (cur && cur.index === currentTrackIndex && trackDurations[cur.index] - cur.position > 3) {
-        console.warn(`Трек ${cur.index + 1} закончился раньше: в trackDurations ${trackDurations[cur.index]} с, ` +
-          `а файл кончился на ${cur.position.toFixed(0)} с. До конца «эфира» будет тишина — поправь таблицу.`);
+        console.warn(`Трек ${cur.index + 1} закончился раньше.`);
       }
       onTrackEnd();
     }
@@ -789,14 +779,8 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Сторож: эфир «играет», а плеер стоит или не двигается — перезагружаем трек с нужной секунды.
-// Чтобы не срабатывать ложно:
-//  • первые 10 секунд после старта/перезагрузки загрузке не мешаем;
-//  • пока файл докачивается (буфер растёт) — это не зависание;
-//  • идёт кроссфейд, трек закончился сам ('ended') или эфир на паузе — пропускаем;
-//  • «приостановленный» AudioContext лечится resume(), а не перезагрузкой трека.
 const WD_GRACE_MS = 10000;
-const WD_STUCK_TICKS = 4;      // 4 тика по 2 с = 8 секунд без движения
+const WD_STUCK_TICKS = 4;
 let wdLastTime = -1;
 let wdLastBuffered = -1;
 let wdStuckTicks = 0;
@@ -821,7 +805,6 @@ setInterval(() => {
     wdLastBuffered = -1;
   }
 
-  // свежая загрузка — даём время
   if (performance.now() - p._state.t0 < WD_GRACE_MS) {
     wdLastTime = p.currentTime;
     wdStuckTicks = 0;
@@ -829,7 +812,7 @@ setInterval(() => {
   }
 
   const bufEnd = p.buffered.length ? p.buffered.end(p.buffered.length - 1) : 0;
-  const buffering = bufEnd > wdLastBuffered + 0.5;   // файл качается — не зависание
+  const buffering = bufEnd > wdLastBuffered + 0.5;
   wdLastBuffered = bufEnd;
 
   const stuck = p.paused || p.currentTime === wdLastTime;
@@ -845,7 +828,7 @@ setInterval(() => {
     wdReloads++;
     const cur = getCurrentTrack();
     if (cur && cur.index === currentTrackIndex) {
-      console.warn(`Трек ${cur.index + 1}: звук завис, перезагружаю (${wdReloads})`);
+      console.warn(`Трек ${cur.index + 1}: завис, перезагружаю (${wdReloads})`);
       startPlayback(p, cur.index, cur.position, p._state.attempt + 1);
     }
   }
@@ -895,15 +878,24 @@ window.addEventListener('beforeunload', () => {
 });
 
 // ============================================
-// ЧАТ
+// ЧАТ + ГИФКИ
 // ============================================
 const chatRef = ref(db, 'chat');
+const recentGifsRef = ref(db, 'radio/recentGifs');
+
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const chatSend = document.getElementById('chatSend');
 const nicknameInput = document.getElementById('nicknameInput');
 const nicknameDisplay = document.getElementById('nicknameDisplay');
 const emojiBar = document.getElementById('emojiBar');
+
+const gifBtn = document.getElementById('gifBtn');
+const gifPanel = document.getElementById('gifPanel');
+const gifPanelClose = document.getElementById('gifPanelClose');
+const gifPanelGrid = document.getElementById('gifPanelGrid');
+const gifUrlInput = document.getElementById('gifUrlInput');
+const gifUrlAdd = document.getElementById('gifUrlAdd');
 
 let nickname = localStorage.getItem('murino_nickname') || '';
 if (nickname) {
@@ -923,6 +915,116 @@ emojiBar.addEventListener('click', (e) => {
     chatInput.focus();
   }
 });
+
+// --- GIF-панель ---
+
+let recentGifs = [];
+
+function isGifUrl(url) {
+  return /^https?:\/\/(media\d*\.)?tenor\.com\/.+\.(gif|webp)$/i.test(url);
+}
+
+function normalizeGifUrl(url) {
+  return url.trim().replace(/&amp;/g, '&');
+}
+
+function renderGifGrid() {
+  if (!gifPanelGrid) return;
+  gifPanelGrid.innerHTML = '';
+
+  // недавние
+  recentGifs.forEach(url => {
+    const el = document.createElement('img');
+    el.className = 'gif-thumb';
+    el.src = url;
+    el.alt = 'gif';
+    el.loading = 'lazy';
+    el.title = 'Отправить';
+    el.addEventListener('click', () => sendGif(url));
+    gifPanelGrid.appendChild(el);
+  });
+
+  // стартовый набор
+  STARTER_GIFS.forEach(url => {
+    if (recentGifs.includes(url)) return;
+    const el = document.createElement('img');
+    el.className = 'gif-thumb';
+    el.src = url;
+    el.alt = 'gif';
+    el.loading = 'lazy';
+    el.title = 'Отправить';
+    el.addEventListener('click', () => sendGif(url));
+    gifPanelGrid.appendChild(el);
+  });
+}
+
+function sendGif(url) {
+  url = normalizeGifUrl(url);
+  if (!isGifUrl(url)) {
+    alert('Нужна ссылка с tenor.com, оканчивающаяся на .gif или .webp');
+    return;
+  }
+
+  push(chatRef, {
+    name: nickname || 'Гость',
+    gif: url,
+    ts: serverTimestamp()
+  });
+
+  // сохраняем в недавние (общий список, до 20 штук)
+  runTransaction(recentGifsRef, (current) => {
+    const list = Array.isArray(current) ? current : [];
+    const filtered = list.filter(u => u !== url);
+    filtered.unshift(url);
+    return filtered.slice(0, 20);
+  }).catch(() => {});
+
+  closeGifPanel();
+}
+
+function openGifPanel() {
+  if (!gifPanel) return;
+  gifPanel.classList.add('active');
+  renderGifGrid();
+}
+
+function closeGifPanel() {
+  if (!gifPanel) return;
+  gifPanel.classList.remove('active');
+}
+
+if (gifBtn) gifBtn.addEventListener('click', openGifPanel);
+if (gifPanelClose) gifPanelClose.addEventListener('click', closeGifPanel);
+
+if (gifUrlAdd && gifUrlInput) {
+  gifUrlAdd.addEventListener('click', () => {
+    const url = normalizeGifUrl(gifUrlInput.value);
+    if (!isGifUrl(url)) {
+      alert('Нужна ссылка с tenor.com, оканчивающаяся на .gif или .webp');
+      return;
+    }
+    sendGif(url);
+    gifUrlInput.value = '';
+  });
+  gifUrlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') gifUrlAdd.click();
+  });
+}
+
+onValue(recentGifsRef, (snapshot) => {
+  const data = snapshot.val();
+  recentGifs = Array.isArray(data) ? data : [];
+  if (gifPanel && gifPanel.classList.contains('active')) renderGifGrid();
+});
+
+document.addEventListener('click', (e) => {
+  if (!gifPanel || !gifBtn) return;
+  if (!gifPanel.classList.contains('active')) return;
+  if (gifPanel.contains(e.target) || gifBtn.contains(e.target)) return;
+  closeGifPanel();
+});
+
+// --- чат ---
 
 let lastSentAt = 0;
 const SPAM_COOLDOWN = 2000;
@@ -978,9 +1080,20 @@ onValue(chatRef, (snapshot) => {
     const name = document.createElement('span');
     name.className = 'name';
     name.textContent = msg.name || 'Гость';
+    div.appendChild(name);
 
-    const text = document.createElement('span');
-    text.textContent = msg.text;
+    if (msg.gif) {
+      const img = document.createElement('img');
+      img.className = 'chat-gif';
+      img.src = msg.gif;
+      img.alt = 'gif';
+      img.loading = 'lazy';
+      div.appendChild(img);
+    } else {
+      const text = document.createElement('span');
+      text.textContent = msg.text || '';
+      div.appendChild(text);
+    }
 
     const time = document.createElement('span');
     time.className = 'time';
@@ -988,10 +1101,8 @@ onValue(chatRef, (snapshot) => {
       const d = new Date(msg.ts);
       time.textContent = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
     }
-
-    div.appendChild(name);
-    div.appendChild(text);
     div.appendChild(time);
+
     chatMessages.appendChild(div);
   }
 
@@ -1011,7 +1122,6 @@ playBtn.addEventListener('click', () => {
     updatePlayIcon(false);
     nowPlaying.textContent = 'на паузе';
   } else {
-    // всё это — внутри клика: иначе браузер не даст запустить AudioContext и второй плеер
     initAudio();
     unlockAudio();
     tuneIn();
@@ -1028,7 +1138,7 @@ audioA.volume = 0.8;
 audioB.volume = 0;
 
 // ============================================
-// ГОЛОСОВАНИЕ ЗА ПРОПУСК ТРЕКА
+// ГОЛОСОВАНИЕ ЗА ПРОПУСК
 // ============================================
 const skipVoteRef = ref(db, 'radio/skipVote');
 const skipBtn = document.getElementById('skipBtn');
@@ -1160,7 +1270,7 @@ function forceSkipTrack(votedIndex) {
 }
 
 // ============================================
-// РЕАКЦИИ 👍 / 👎
+// РЕАКЦИИ
 // ============================================
 const reactionsRef = ref(db, 'radio/reactions');
 const REACTION_TYPES = ['up', 'down'];
@@ -1216,7 +1326,7 @@ onValue(reactionsRef, (snapshot) => {
 });
 
 // ============================================
-// ТОП ЛУЧШИХ (1-5) И ХУДШИХ (6-10)
+// ТОП ЛУЧШИХ И ХУДШИХ
 // ============================================
 let topAllScores = [];
 
@@ -1294,7 +1404,7 @@ function renderTopList(elementId, items, isWorst, startRank) {
 }
 
 // ============================================
-// СМЕНА ТРЕКА — ОБНОВЛЯЕМ UI
+// СМЕНА ТРЕКА — ОБНОВЛЕНИЕ UI
 // ============================================
 let lastVoteKey = null;
 let lastReactionKey = null;
@@ -1314,7 +1424,7 @@ setInterval(() => {
 }, 1000);
 
 // ============================================
-// ПОГОДА + ПОГОДНЫЕ ЭФФЕКТЫ
+// ПОГОДА
 // ============================================
 const weatherFxCanvas = document.createElement('canvas');
 weatherFxCanvas.id = 'weatherFx';
@@ -1497,11 +1607,8 @@ loadMurinoWeather();
 setInterval(loadMurinoWeather, 30 * 60 * 1000);
 
 // ============================================
-// ИЗМЕРЕНИЕ РЕАЛЬНЫХ ДЛИТЕЛЬНОСТЕЙ
+// ИЗМЕРЕНИЕ ДЛИТЕЛЬНОСТЕЙ
 // ============================================
-// Запусти в консоли: await measureRealDurations()
-// Последовательно грузит метаданные каждого трека через прокси, печатает JSON реальных длин и
-// таблицу треков, где |реальная − trackDurations[i]| > 3 сек. trackDurations она не меняет.
 window.measureRealDurations = async () => {
   const real = [];
 
@@ -1537,3 +1644,70 @@ window.measureRealDurations = async () => {
 
   return real;
 };
+
+// ============================================
+// СЕКРЕТНАЯ ПАСХАЛКА
+// ============================================
+const logoEl = document.getElementById('logoEl');
+const secretRoom = document.getElementById('secretRoom');
+const secretText = document.getElementById('secretText');
+const secretExit = document.getElementById('secretExit');
+const treeWrap = document.getElementById('treeWrap');
+const ptenecScreen = document.getElementById('ptenecScreen');
+
+const treeFinished = localStorage.getItem('murino_tree_finished');
+
+if (!treeFinished) {
+  let visits = parseInt(localStorage.getItem('murino_visits') || '0');
+  visits++;
+  localStorage.setItem('murino_visits', visits.toString());
+
+  const isThirdVisit = visits >= 3;
+  const luckyRoll = Math.random() < 0.3;
+
+  if (isThirdVisit && luckyRoll) {
+    const clicksNeeded = Math.floor(Math.random() * 91) + 10;
+    let clicksDone = 0;
+
+    logoEl.classList.add('clickable');
+
+    logoEl.addEventListener('click', () => {
+      if (clicksDone >= clicksNeeded) return;
+      clicksDone++;
+
+      logoEl.style.transform = 'rotate(-1.5deg) scale(1.08)';
+      setTimeout(() => {
+        logoEl.style.transform = 'rotate(-1.5deg) scale(1)';
+      }, 100);
+
+      if (clicksDone >= clicksNeeded) {
+        secretRoom.classList.add('active');
+        logoEl.classList.remove('clickable');
+        logoEl.style.textShadow = '';
+        document.body.style.overflow = 'hidden';
+      }
+    });
+  }
+}
+
+let treeClicks = 0;
+if (treeWrap) {
+  treeWrap.addEventListener('click', () => {
+    treeClicks++;
+
+    if (treeClicks === 1) {
+      secretText.textContent = 'чтож, тут друн\nон дал вам чйцо';
+      secretText.style.display = 'block';
+    } else if (treeClicks === 2) {
+      secretText.textContent = 'чтож, тут нету друна';
+    }
+  });
+}
+
+if (secretExit) {
+  secretExit.addEventListener('click', () => {
+    secretRoom.classList.remove('active');
+    ptenecScreen.classList.add('active');
+    localStorage.setItem('murino_tree_finished', '1');
+  });
+}
