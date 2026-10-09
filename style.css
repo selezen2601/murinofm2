@@ -922,8 +922,11 @@ body::before {
 
 .chat-gif {
   display: block;
-  max-height: 200px;
-  max-width: 100%;
+  max-height: 180px;
+  max-width: 70%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   margin-top: 4px;
   border: 2px solid var(--border);
   border-radius: 4px;
@@ -1304,43 +1307,50 @@ body::before {
 
   /* --- Новости компактные --- */
   .top-news-ticker { height: 32px; }
-  .top-news-label { font-size: 9px; padding: 0 10px; letter-spacing: 2px; }
+  .top-news-label { font-size: 9px; padding: 0 8px; letter-spacing: 1px; }
   .top-news-track { font-size: 11px; }
-  .top-news-track span { padding: 0 50px; }
+  .top-news-track span { padding: 0 40px; }
 
-  /* --- Все верхние кнопки в один ряд под новостями --- */
+  /* ============================================
+     ВСЕ 6 КНОПОК В ОДИН РЯД
+     ============================================ */
   .theme-switcher,
   .extra-buttons,
   .online-badge,
   .noise-toggle {
     position: fixed;
-    top: 40px;
+    top: 36px;
+    height: 28px;
+    box-sizing: border-box;
     transform: none;
   }
 
-  /* Темы — слева */
+  /* Слева: темы */
   .theme-switcher {
-    left: 6px;
+    left: 4px;
     right: auto;
     padding: 2px;
     gap: 2px;
     box-shadow: 2px 2px 0 var(--shadow-color);
+    display: flex;
+    align-items: center;
   }
-  .theme-btn { width: 22px; height: 22px; font-size: 10px; }
+  .theme-btn { width: 20px; height: 20px; font-size: 10px; }
 
-  /* Кнопки поддержать / проекты / Telegram — по центру */
+  /* Центр: ❤ ◆ ✈ */
   .extra-buttons {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
     flex-direction: row;
-    gap: 3px;
+    gap: 2px;
     align-items: center;
     z-index: 20;
+    display: flex;
   }
   .extra-btn {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     padding: 0;
     border-radius: 4px;
     justify-content: center;
@@ -1348,27 +1358,32 @@ body::before {
     box-shadow: 2px 2px 0 var(--shadow-color);
     border-width: 2px;
     flex-shrink: 0;
+    font-size: 10px;
   }
   .extra-text { display: none; }
-  .extra-icon { font-size: 11px; line-height: 1; }
-  .tg-btn img, .tg-btn svg { width: 12px; height: 12px; }
+  .extra-icon { font-size: 10px; line-height: 1; }
+  .tg-btn img, .tg-btn svg { width: 11px; height: 11px; }
 
-  /* Онлайн и шум — справа */
+  /* Справа: онлайн + шум */
   .online-badge {
-    right: 36px;
+    right: 34px;
     font-size: 7px;
-    padding: 3px 5px;
-    letter-spacing: 1px;
-    gap: 4px;
+    padding: 4px 6px;
+    letter-spacing: 0;
+    gap: 3px;
     box-shadow: 2px 2px 0 var(--shadow-color);
     z-index: 11;
+    height: 22px;
+    display: flex;
+    align-items: center;
   }
-  .online-dot { width: 5px; height: 5px; }
+  .online-dot { width: 4px; height: 4px; }
+  .online-badge b { font-size: 8px; }
 
   .noise-toggle {
-    right: 6px;
-    width: 24px;
-    height: 24px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
     font-size: 10px;
     box-shadow: 2px 2px 0 var(--shadow-color);
     z-index: 11;
@@ -1376,16 +1391,16 @@ body::before {
 
   /* --- Основной контент --- */
   .radio {
-    padding: 76px 12px 90px;
+    padding: 72px 12px 90px;
     gap: 8px;
   }
 
-  .logo { font-size: 40px; margin-top: 2px; }
+  .logo { font-size: 38px; margin-top: 2px; }
   .player-box { padding: 12px; box-shadow: 5px 5px 0 var(--shadow-color); }
   .btn { width: 44px; height: 44px; }
   .btn-small { width: 32px; height: 32px; font-size: 13px; }
 
-  /* --- Чат — большой, с рабочим полем ввода --- */
+  /* --- Чат --- */
   .chat-box {
     max-width: 100%;
     position: relative;
@@ -1399,17 +1414,19 @@ body::before {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Гифка в чате — меньше */
   .chat-gif {
-    max-height: none;
-    max-width: 100%;
+    max-height: 180px;
+    max-width: 70%;
     width: auto;
     height: auto;
     object-fit: contain;
     display: block;
     margin-top: 6px;
+    border-radius: 6px;
   }
 
-  /* Поле ввода — 16px чтобы iOS не зумил и давал ввод */
+  /* Поле ввода — 16px */
   .chat-input-row {
     position: relative;
     z-index: 20;
@@ -1446,7 +1463,7 @@ body::before {
   }
   .emoji-btn { font-size: 16px; padding: 3px 5px; }
 
-  /* --- GIF-панель перекрывает чат целиком --- */
+  /* --- GIF-панель перекрывает чат --- */
   .gif-panel {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -1477,7 +1494,7 @@ body::before {
   .footer { font-size: 8px; left: 10px; bottom: 60px; }
   .vote-popup { left: 10px; width: 220px; }
 
-  /* --- Погода — компактная, внизу справа --- */
+  /* --- Погода --- */
   .weather-widget {
     bottom: 12px;
     right: 12px;
@@ -1491,7 +1508,7 @@ body::before {
   .weather-city { font-size: 7px; letter-spacing: 1px; }
   .weather-desc { font-size: 8px; }
 
-  /* --- DrunGader — внизу слева --- */
+  /* --- DrunGader --- */
   .drungader-btn {
     position: fixed !important;
     bottom: 16px !important;
@@ -1508,7 +1525,7 @@ body::before {
   .drungader-btn-label { display: none !important; }
   .drungader-btn span:first-child { font-size: 22px !important; }
 
-  /* --- Топы — на всю ширину --- */
+  /* --- Топы --- */
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
   .top-header { font-size: 9px; padding: 6px 10px; letter-spacing: 1px; }
@@ -1524,14 +1541,14 @@ body::before {
   .top-bar { font-size: 10px; letter-spacing: 2px; gap: 8px; }
 
   .theme-switcher { padding: 2px; gap: 2px; }
-  .theme-btn { width: 20px; height: 20px; font-size: 10px; }
+  .theme-btn { width: 18px; height: 18px; font-size: 9px; }
 
-  .extra-btn { width: 22px; height: 22px; }
-  .extra-icon { font-size: 10px; }
-  .tg-btn img, .tg-btn svg { width: 11px; height: 11px; }
+  .extra-btn { width: 20px; height: 20px; }
+  .extra-icon { font-size: 9px; }
+  .tg-btn img, .tg-btn svg { width: 10px; height: 10px; }
 
-  .online-badge { font-size: 6px; padding: 2px 4px; right: 32px; }
-  .noise-toggle { width: 22px; height: 22px; font-size: 9px; }
+  .online-badge { font-size: 6px; padding: 3px 5px; right: 32px; }
+  .noise-toggle { width: 20px; height: 20px; font-size: 9px; }
 
   .chat-messages { height: 50vh; min-height: 280px; }
   .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); }
