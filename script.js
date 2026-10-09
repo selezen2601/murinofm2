@@ -916,8 +916,6 @@ emojiBar.addEventListener('click', (e) => {
   }
 });
 
-// --- GIF-панель ---
-
 let recentGifs = [];
 
 function isGifUrl(url) {
@@ -932,7 +930,6 @@ function renderGifGrid() {
   if (!gifPanelGrid) return;
   gifPanelGrid.innerHTML = '';
 
-  // недавние
   recentGifs.forEach(url => {
     const el = document.createElement('img');
     el.className = 'gif-thumb';
@@ -944,7 +941,6 @@ function renderGifGrid() {
     gifPanelGrid.appendChild(el);
   });
 
-  // стартовый набор
   STARTER_GIFS.forEach(url => {
     if (recentGifs.includes(url)) return;
     const el = document.createElement('img');
@@ -971,7 +967,6 @@ function sendGif(url) {
     ts: serverTimestamp()
   });
 
-  // сохраняем в недавние (общий список, до 20 штук)
   runTransaction(recentGifsRef, (current) => {
     const list = Array.isArray(current) ? current : [];
     const filtered = list.filter(u => u !== url);
@@ -1023,8 +1018,6 @@ document.addEventListener('click', (e) => {
   if (gifPanel.contains(e.target) || gifBtn.contains(e.target)) return;
   closeGifPanel();
 });
-
-// --- чат ---
 
 let lastSentAt = 0;
 const SPAM_COOLDOWN = 2000;
@@ -1326,7 +1319,7 @@ onValue(reactionsRef, (snapshot) => {
 });
 
 // ============================================
-// ТОП ЛУЧШИХ И ХУДШИХ
+// ТОП
 // ============================================
 let topAllScores = [];
 
