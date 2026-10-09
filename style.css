@@ -39,10 +39,10 @@
 [data-theme="green"] {
   --bg: #d8ead8;
   --bg-paper: #eaf5ea;
-  --bg-paper-2: #d8ead8;
+  --bg-paper-2: #c8e0c8;
   --bg-paper-3: #f2faf2;
   --text: #14301e;
-  --text-soft: #6a8a70;
+  --text-soft: #4a6a50;
   --accent: #2e8b40;
   --accent-2: #7bc47f;
   --border: #14301e;
@@ -50,7 +50,7 @@
   --news-text: #eaf5ea;
   --screen-bg: #0a1f12;
   --screen-text: #7bc47f;
-  --shadow-color: #14301e;
+  --shadow-color: #0a1f12;
   --tree-color: #14301e;
 }
 
@@ -92,6 +92,7 @@ body::before {
 }
 
 [data-theme="dark"] #bgNoise { mix-blend-mode: screen; opacity: 0.05; }
+[data-theme="green"] #bgNoise { mix-blend-mode: multiply; opacity: 0.06; }
 
 #weatherFx {
   position: fixed;
@@ -414,19 +415,6 @@ body::before {
   margin-left: 10px;
   display: inline-block;
   transform: rotate(2deg);
-}
-
-.logo.clickable {
-  cursor: pointer;
-  text-shadow: 3px 3px 0 rgba(212, 64, 32, 0.6), 0 0 30px rgba(212, 64, 32, 0.4);
-  animation: logoPulse 2s ease-in-out infinite;
-}
-
-.logo.clickable:hover { transform: rotate(-1.5deg) scale(1.03); }
-
-@keyframes logoPulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.15); }
 }
 
 .player-box {
@@ -901,10 +889,12 @@ body::before {
   font-size: 13px;
   line-height: 1.4;
   background: var(--bg-paper-3);
+  position: relative;
 }
 
 .chat-messages::-webkit-scrollbar { width: 6px; }
-.chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+.chat-messages::-webkit-scrollbar-track { background: var(--bg-paper-2); }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 .chat-msg { color: var(--text); word-wrap: break-word; }
 
@@ -922,7 +912,7 @@ body::before {
 
 .chat-gif {
   display: block;
-  max-height: 200px;
+  max-height: 140px;
   max-width: 100%;
   width: auto;
   height: auto;
@@ -966,7 +956,13 @@ body::before {
   flex-direction: column;
   background: var(--bg-paper-2);
   border-top: 2px solid var(--border);
-  max-height: 300px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  max-height: 260px;
+  z-index: 50;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
 }
 
 .gif-panel.active { display: flex; }
@@ -1039,11 +1035,12 @@ body::before {
   gap: 4px;
   padding: 8px 12px;
   overflow-y: auto;
-  max-height: 220px;
+  max-height: 200px;
 }
 
 .gif-panel-grid::-webkit-scrollbar { width: 6px; }
-.gif-panel-grid::-webkit-scrollbar-thumb { background: var(--border); }
+.gif-panel-grid::-webkit-scrollbar-track { background: var(--bg-paper-2); }
+.gif-panel-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 .gif-thumb {
   width: 100%;
@@ -1064,6 +1061,10 @@ body::before {
 .chat-input-row {
   display: flex;
   border-top: 2px solid var(--border);
+  position: relative;
+  z-index: 60;
+  background: var(--bg-paper);
+  flex-shrink: 0;
 }
 
 .chat-input-row input {
@@ -1075,6 +1076,7 @@ body::before {
   color: var(--text);
   font-family: 'Courier Prime', monospace;
   font-size: 13px;
+  min-width: 0;
 }
 
 .chat-input-row input::placeholder { color: var(--text-soft); }
@@ -1089,6 +1091,7 @@ body::before {
   font-size: 16px;
   transition: background 0.15s;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
 .chat-input-row .gif-btn:hover { background: var(--accent); color: var(--bg-paper); }
@@ -1105,6 +1108,7 @@ body::before {
   letter-spacing: 2px;
   transition: all 0.15s;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .chat-input-row button#chatSend:hover:not(:disabled) { background: var(--accent); }
@@ -1180,105 +1184,6 @@ body::before {
 }
 .weather-desc { font-size: 10px; color: var(--text); letter-spacing: 1px; }
 
-.secret-room {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: var(--bg);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px;
-  gap: 30px;
-}
-
-.secret-room.active { display: flex; }
-
-.tree-wrap {
-  width: 280px;
-  height: 280px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  color: var(--tree-color);
-}
-
-.tree-wrap:hover { transform: scale(1.05); }
-
-.tree-svg {
-  width: 100%;
-  height: 100%;
-  fill: var(--tree-color);
-  stroke: var(--tree-color);
-}
-
-.secret-text {
-  font-family: 'Special Elite', serif;
-  font-size: 22px;
-  text-align: center;
-  color: var(--text);
-  max-width: 500px;
-  line-height: 1.5;
-  white-space: pre-line;
-  padding: 20px;
-  border: 2px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-paper);
-  box-shadow: 4px 4px 0 var(--shadow-color);
-}
-
-.secret-exit {
-  font-family: 'Oswald', sans-serif;
-  font-size: 14px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  padding: 12px 28px;
-  background: var(--accent);
-  color: var(--bg-paper);
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  cursor: pointer;
-  box-shadow: 4px 4px 0 var(--shadow-color);
-  transition: all 0.15s;
-  font-weight: 700;
-}
-
-.secret-exit:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 var(--shadow-color);
-}
-
-.ptenec-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: var(--bg);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px;
-  gap: 24px;
-}
-
-.ptenec-screen.active { display: flex; }
-
-.ptenec-img {
-  max-width: 70vw;
-  max-height: 60vh;
-  border: 3px solid var(--border);
-  border-radius: 6px;
-  box-shadow: 8px 8px 0 var(--shadow-color);
-  background: var(--bg-paper);
-}
-
-.ptenec-caption {
-  font-family: 'Special Elite', serif;
-  font-size: 20px;
-  color: var(--text);
-  text-align: center;
-}
-
 /* ============================================
    МОБИЛЬНАЯ ВЕРСИЯ
    ============================================ */
@@ -1303,13 +1208,6 @@ body::before {
   .top-news-label { font-size: 9px; padding: 0 10px; letter-spacing: 2px; }
   .top-news-track { font-size: 11px; }
   .top-news-track span { padding: 0 50px; }
-
-  /* Верхний ряд кнопок: тема | кнопки проекта | онлайн | шум — все в одну строку */
-  .top-controls-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
 
   .theme-switcher,
   .extra-buttons,
@@ -1373,7 +1271,6 @@ body::before {
   .btn { width: 44px; height: 44px; }
   .btn-small { width: 32px; height: 32px; font-size: 13px; }
 
-  /* Чат: большой, растягивается */
   .chat-box {
     max-width: 100%;
     position: relative;
@@ -1391,7 +1288,7 @@ body::before {
   }
 
   .chat-gif {
-    max-height: none;
+    max-height: 120px;
     max-width: 100%;
     width: auto;
     height: auto;
@@ -1400,16 +1297,19 @@ body::before {
     margin-top: 6px;
   }
 
-  /* Панель гифок перекрывает весь чат */
   .gif-panel {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    max-height: none;
-    height: 100%;
+    left: 0; right: 0;
+    bottom: 100%;
+    top: auto;
+    max-height: 70vh;
+    height: auto;
     background: var(--bg-paper);
     z-index: 100;
     border-radius: 0;
     border: none;
+    border-top: 2px solid var(--border);
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
   }
   .gif-panel.active { display: flex; }
   .gif-panel-header { padding: 10px 14px; font-size: 13px; letter-spacing: 3px; }
@@ -1419,7 +1319,7 @@ body::before {
   .gif-panel-grid {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 6px; padding: 10px 12px;
-    max-height: none; flex: 1; overflow-y: auto;
+    max-height: 50vh; overflow-y: auto;
   }
   .gif-thumb { height: 90px; object-fit: cover; }
 
@@ -1436,21 +1336,6 @@ body::before {
   .weather-temp { font-size: 13px; }
   .weather-city { font-size: 7px; letter-spacing: 1px; }
   .weather-desc { font-size: 8px; }
-
-  /* DrunGader внизу слева, всегда видим */
-  .drungader-btn {
-    position: fixed;
-    bottom: 12px; left: 12px;
-    padding: 4px 8px;
-    font-size: 9px;
-    z-index: 9999 !important;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-    pointer-events: auto !important;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .drungader-btn-label { display: none; }
-  .drungader-btn span:first-child { font-size: 18px; }
 
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
