@@ -1061,6 +1061,9 @@ body::before {
 .chat-input-row {
   display: flex;
   border-top: 2px solid var(--border);
+  position: relative;
+  z-index: 20;
+  background: var(--bg-paper);
 }
 
 .chat-input-row input {
@@ -1072,6 +1075,7 @@ body::before {
   color: var(--text);
   font-family: 'Courier Prime', monospace;
   font-size: 13px;
+  min-width: 0;
 }
 
 .chat-input-row input::placeholder { color: var(--text-soft); }
@@ -1086,6 +1090,7 @@ body::before {
   font-size: 16px;
   transition: background 0.15s;
   font-family: inherit;
+  flex-shrink: 0;
 }
 
 .chat-input-row .gif-btn:hover { background: var(--accent); color: var(--bg-paper); }
@@ -1102,6 +1107,7 @@ body::before {
   letter-spacing: 2px;
   transition: all 0.15s;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .chat-input-row button#chatSend:hover:not(:disabled) { background: var(--accent); }
@@ -1277,7 +1283,52 @@ body::before {
 }
 
 /* ============================================
-   МОБИЛЬНАЯ ВЕРСИЯ
+   DRUNGRADER MODAL — ФИКС ПОЗИЦИИ
+   ============================================ */
+.drungader-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 20px;
+}
+
+.drungader-modal.active {
+  display: flex !important;
+}
+
+.drungader-modal .drungader-content {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ============================================
+   DRUNGRADER BTN — ВИДЕН И КЛИКАЕТСЯ ВЕЗДЕ
+   ============================================ */
+.drungader-btn {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 24px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 500 !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* ============================================
+   АДАПТАЦИЯ
    ============================================ */
 @media (max-width: 1100px) {
   .top-row {
@@ -1351,19 +1402,29 @@ body::before {
     z-index: 11;
   }
 
-  .radio { padding: 80px 12px 90px; gap: 8px; }
+  .radio {
+    padding: 80px 12px 100px;
+    gap: 8px;
+  }
+
   .logo { font-size: 42px; margin-top: 4px; }
   .player-box { padding: 12px; box-shadow: 5px 5px 0 var(--shadow-color); }
   .btn { width: 44px; height: 44px; }
   .btn-small { width: 32px; height: 32px; font-size: 13px; }
 
-  .chat-box { max-width: 100%; position: relative; }
+  /* Чат — большой */
+  .chat-box {
+    max-width: 100%;
+    position: relative;
+    z-index: 10;
+  }
 
   .chat-messages {
-    height: 60vh;
-    min-height: 380px;
-    max-height: 600px;
+    height: 55vh;
+    min-height: 340px;
+    max-height: 700px;
     font-size: 13px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .chat-gif {
@@ -1376,6 +1437,47 @@ body::before {
     margin-top: 6px;
   }
 
+  /* Поле ввода — работает на iOS (16px) */
+  .chat-input-row {
+    position: relative;
+    z-index: 20;
+    background: var(--bg-paper);
+  }
+
+  .chat-input-row input {
+    font-size: 16px !important;
+    padding: 12px 14px;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+    min-width: 0;
+  }
+
+  .chat-input-row .gif-btn {
+    padding: 0 14px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .chat-input-row button#chatSend {
+    padding: 0 20px;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .name-input-row input {
+    font-size: 16px !important;
+    padding: 10px 14px;
+  }
+
+  .emoji-bar {
+    padding: 6px 10px;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .emoji-btn { font-size: 18px; padding: 4px 6px; }
+
+  /* GIF-панель перекрывает чат целиком */
   .gif-panel {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -1389,23 +1491,24 @@ body::before {
   .gif-panel.active { display: flex; }
   .gif-panel-header { padding: 10px 14px; font-size: 13px; letter-spacing: 3px; }
   .gif-panel-url { padding: 10px 12px; gap: 6px; }
-  .gif-panel-url input { font-size: 13px; padding: 10px 12px; }
+  .gif-panel-url input { font-size: 16px !important; padding: 10px 12px; }
   .gif-panel-url button { width: 40px; font-size: 18px; }
   .gif-panel-grid {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 6px; padding: 10px 12px;
     max-height: none; flex: 1; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .gif-thumb { height: 90px; object-fit: cover; }
 
-  .footer { font-size: 8px; left: 10px; bottom: 50px; }
+  .footer { font-size: 8px; left: 10px; bottom: 60px; }
   .vote-popup { left: 10px; width: 220px; }
 
   .weather-widget {
     bottom: 12px; right: 12px;
     padding: 5px 8px; gap: 5px;
     box-shadow: 3px 3px 0 var(--shadow-color);
-    z-index: 9998;
+    z-index: 500;
   }
   .weather-icon { font-size: 18px; }
   .weather-temp { font-size: 13px; }
@@ -1413,18 +1516,20 @@ body::before {
   .weather-desc { font-size: 8px; }
 
   .drungader-btn {
-    position: fixed;
-    bottom: 12px; left: 12px;
-    padding: 4px 8px;
-    font-size: 9px;
-    z-index: 9999 !important;
+    position: fixed !important;
+    bottom: 16px !important;
+    left: 16px !important;
+    top: auto !important;
+    right: auto !important;
+    padding: 6px 10px !important;
+    font-size: 10px;
+    z-index: 500 !important;
     box-shadow: 2px 2px 0 var(--shadow-color);
     pointer-events: auto !important;
     touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
   }
-  .drungader-btn-label { display: none; }
-  .drungader-btn span:first-child { font-size: 18px; }
+  .drungader-btn-label { display: none !important; }
+  .drungader-btn span:first-child { font-size: 22px !important; }
 
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
@@ -1434,13 +1539,6 @@ body::before {
   .top-track { min-width: 42px; font-size: 9px; }
   .top-rank { font-size: 10px; min-width: 16px; }
   .top-score { font-size: 9px; }
-
-  .emoji-bar { padding: 5px 10px; gap: 3px; }
-  .emoji-btn { font-size: 16px; padding: 2px 5px; }
-  .chat-input-row input { font-size: 12px; padding: 10px 12px; }
-  .chat-input-row .gif-btn { padding: 0 12px; font-size: 15px; }
-  .chat-input-row button#chatSend { padding: 0 18px; font-size: 13px; }
-  .name-input-row input { font-size: 11px; padding: 7px 12px; }
 }
 
 @media (max-width: 380px) {
@@ -1457,38 +1555,7 @@ body::before {
   .online-badge { font-size: 7px; padding: 3px 5px; right: 36px; }
   .noise-toggle { width: 24px; height: 24px; font-size: 10px; }
 
-  .chat-messages { height: 55vh; min-height: 320px; }
+  .chat-messages { height: 50vh; min-height: 300px; }
   .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
   .gif-thumb { height: 70px; }
-}
-/* ============================================
-   DRUNGRADER — ЖЁСТКИЙ ФИКС
-   ============================================ */
-.drungader-btn {
-  position: fixed !important;
-  bottom: 24px !important;
-  left: 24px !important;
-  top: auto !important;
-  right: auto !important;
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  z-index: 2147483647 !important;
-  pointer-events: auto !important;
-  touch-action: manipulation !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  transform: none !important;
-}
-
-/* На мобиле — чуть меньше */
-@media (max-width: 700px) {
-  .drungader-btn {
-    bottom: 16px !important;
-    left: 16px !important;
-    padding: 6px 10px !important;
-  }
-  .drungader-btn-label { display: none !important; }
-  .drungader-btn span:first-child { font-size: 22px !important; }
 }
