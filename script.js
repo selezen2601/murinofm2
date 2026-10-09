@@ -431,7 +431,7 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0, trackIndex = currentTrac
 }
 
 // ============================================
-// ВИЗУАЛИЗАТОР — только когда играет
+// ВИЗУАЛИЗАТОР
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
@@ -543,7 +543,6 @@ function stopVisualizer() {
   pieces.length = 0;
 }
 
-// стартовая плоская линия
 ctx.fillStyle = '#f5a623';
 for (let i = 0; i < BAR_COUNT; i++) {
   const barWidth = canvas.width / BAR_COUNT;
@@ -551,7 +550,7 @@ for (let i = 0; i < BAR_COUNT; i++) {
 }
 
 // ============================================
-// ФОНОВЫЙ ШУМ — анимированный, но throttled (~8 fps) и в низком разрешении
+// ФОНОВЫЙ ШУМ — анимированный, throttled (~8 fps)
 // ============================================
 const bgCanvas = document.getElementById('bgNoise');
 const bgCtx = bgCanvas.getContext('2d');
@@ -559,10 +558,9 @@ const noiseToggle = document.getElementById('noiseToggle');
 let noiseEnabled = true;
 let noiseFrameId = null;
 let lastNoiseDraw = 0;
-const NOISE_INTERVAL = 125; // ~8 fps
+const NOISE_INTERVAL = 125;
 
 function resizeBg() {
-  // рисуем в низком разрешении — canvas растягивается через CSS
   const w = Math.min(window.innerWidth, 480);
   const h = Math.min(window.innerHeight, 480);
   bgCanvas.width = w;
@@ -575,16 +573,6 @@ window.addEventListener('resize', () => {
   clearTimeout(bgResizeTimer);
   bgResizeTimer = setTimeout(resizeBg, 250);
 });
-
-let noiseBuffer = null;
-
-function initNoiseBuffer() {
-  const w = bgCanvas.width;
-  const h = bgCanvas.height;
-  const imageData = bgCtx.createImageData(w, h);
-  noiseBuffer = new Uint32Array(imageData.data.buffer);
-  return imageData;
-}
 
 function drawBgNoise(time) {
   if (!noiseEnabled) return;
@@ -995,12 +983,14 @@ nicknameInput.addEventListener('input', () => {
   nicknameDisplay.textContent = nickname || 'Гость';
 });
 
-emojiBar.addEventListener('click', (e) => {
-  if (e.target.classList.contains('emoji-btn')) {
-    chatInput.value += e.target.dataset.emoji;
-    chatInput.focus();
-  }
-});
+if (emojiBar) {
+  emojiBar.addEventListener('click', (e) => {
+    if (e.target.classList.contains('emoji-btn')) {
+      chatInput.value += e.target.dataset.emoji;
+      chatInput.focus();
+    }
+  });
+}
 
 let recentGifs = [];
 
@@ -1066,15 +1056,20 @@ function sendGif(url) {
 function openGifPanel() {
   if (!gifPanel) return;
   gifPanel.classList.add('active');
+  if (gifBtn) gifBtn.classList.add('active');
   renderGifGrid();
 }
 
 function closeGifPanel() {
   if (!gifPanel) return;
   gifPanel.classList.remove('active');
+  if (gifBtn) gifBtn.classList.remove('active');
 }
 
-if (gifBtn) gifBtn.addEventListener('click', openGifPanel);
+if (gifBtn) gifBtn.addEventListener('click', () => {
+  if (gifPanel.classList.contains('active')) closeGifPanel();
+  else openGifPanel();
+});
 if (gifPanelClose) gifPanelClose.addEventListener('click', closeGifPanel);
 
 if (gifUrlAdd && gifUrlInput) {
