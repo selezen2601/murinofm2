@@ -129,7 +129,22 @@
         <button class="emoji-btn" data-emoji="🚚">🚚</button>
         <button class="emoji-btn" data-emoji="🐦">🐦</button>
       </div>
+
+      <!-- Панель гифок -->
+      <div class="gif-panel" id="gifPanel">
+        <div class="gif-panel-header">
+          <span>🎬 ГИФКИ</span>
+          <button class="gif-panel-close" id="gifPanelClose">✕</button>
+        </div>
+        <div class="gif-panel-url">
+          <input type="text" id="gifUrlInput" placeholder="вставь ссылку с tenor.com (.gif)">
+          <button id="gifUrlAdd">+</button>
+        </div>
+        <div class="gif-panel-grid" id="gifPanelGrid"></div>
+      </div>
+
       <div class="chat-input-row">
+        <button class="gif-btn" id="gifBtn" title="Гифки">🎬</button>
         <input type="text" id="chatInput" placeholder="написать сообщение..." maxlength="200">
         <button id="chatSend">→</button>
       </div>
