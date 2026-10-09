@@ -1,8 +1,7 @@
 /* ============================================
-   DRUNGRADER — базовые стили
+   DRUNGRADER — все цвета через переменные темы
    ============================================ */
 
-/* Кнопка открытия */
 .drungader-btn {
   position: fixed;
   bottom: 20px;
@@ -48,7 +47,6 @@
   letter-spacing: 2px;
 }
 
-/* Модальное окно */
 .drungader-modal {
   position: fixed;
   inset: 0;
@@ -77,6 +75,7 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  color: var(--text);
 }
 
 .drungader-header {
@@ -111,7 +110,6 @@
   transform: scale(1.2);
 }
 
-/* Переключатель режимов */
 .drun-mode-switch {
   display: flex;
   background: var(--bg-paper-3);
@@ -146,7 +144,6 @@
   color: var(--bg-paper);
 }
 
-/* Замок */
 .drungader-locked {
   display: flex;
   flex-direction: column;
@@ -198,7 +195,6 @@
   font-size: 18px;
 }
 
-/* Игровое поле */
 .drungader-game {
   display: grid;
   grid-template-columns: 1fr 1.4fr 1fr;
@@ -328,7 +324,6 @@
   font-weight: 700;
 }
 
-/* Колесо */
 .drungader-wheel-wrap {
   position: relative;
   width: 280px;
@@ -410,7 +405,6 @@
   color: var(--text-soft);
 }
 
-/* Обмен */
 .drungader-exchange {
   display: flex;
   flex-direction: column;
@@ -453,7 +447,6 @@
   font-size: 18px;
 }
 
-/* Сообщение */
 .drungader-message {
   padding: 10px 18px;
   font-family: 'Courier Prime', monospace;
@@ -466,7 +459,6 @@
   font-weight: 700;
 }
 
-/* Контекстное меню */
 .drun-context-menu {
   position: fixed;
   z-index: 1000;
@@ -501,9 +493,6 @@
   color: var(--bg-paper);
 }
 
-/* ============================================
-   МОБИЛЬНАЯ ВЕРСИЯ
-   ============================================ */
 @media (max-width: 700px) {
   .drungader-btn {
     bottom: 12px;
@@ -542,7 +531,6 @@
     letter-spacing: 2px;
   }
 
-  /* На мобиле три колонки в столбик */
   .drungader-game {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
