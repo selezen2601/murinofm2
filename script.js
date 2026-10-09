@@ -21,7 +21,7 @@ document.querySelectorAll('[data-theme-btn]').forEach(btn => {
 });
 
 // ============================================
-// FIREBASE
+// FIREBASE (единственная инициализация)
 // ============================================
 const firebaseConfig = {
   apiKey: "AIzaSyDtzE3NVFHFVYqDJprioaCjEhJu-RrBPAg",
@@ -36,11 +36,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Экспортируем для drun.js
+window.__murinoDb = db;
+
 let myId = localStorage.getItem('murino_myId');
 if (!myId) {
   myId = 'u_' + Math.random().toString(36).slice(2, 10);
   localStorage.setItem('murino_myId', myId);
 }
+window.__murinoMyId = myId;
 
 // ============================================
 // ПЛЕЙЛИСТ
@@ -149,7 +153,7 @@ if (trackDurations.length !== RAW_PLAYLIST.length) {
 }
 
 // ============================================
-// ГИФКИ (стартовый набор)
+// ГИФКИ
 // ============================================
 const STARTER_GIFS = [
   "https://media1.tenor.com/m/pcZVzLAnLPUAAAAd/мел-строй-stroy-меллстрой.gif",
@@ -230,12 +234,14 @@ function shuffleArray(arr) {
 const shuffledNews = shuffleArray(news);
 
 // ============================================
-// ДВА АУДИО
+// АУДИО
 // ============================================
 const audioA = new Audio();
 const audioB = new Audio();
 audioA.crossOrigin = 'anonymous';
 audioB.crossOrigin = 'anonymous';
+audioA.preload = 'metadata';
+audioB.preload = 'metadata';
 audioA.volume = 0.8;
 audioB.volume = 0;
 
@@ -426,7 +432,7 @@ function crossfadeTo(newSrc, targetVolume, startAt = 0, trackIndex = currentTrac
 }
 
 // ============================================
-// ВИЗУАЛИЗАТОР
+// ВИЗУАЛИЗАТОР (рисует ТОЛЬКО когда играет)
 // ============================================
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
@@ -467,7 +473,10 @@ function readSpectrum() {
   return out;
 }
 
+let visualizerRunning = false;
+
 function drawVisualizer() {
+  if (!visualizerRunning) return;
   requestAnimationFrame(drawVisualizer);
 
   const w = canvas.width;
@@ -520,29 +529,58 @@ function drawVisualizer() {
     ctx.fillRect(p.x, p.y, p.w, PIECE_H);
   }
 }
-drawVisualizer();
+
+function startVisualizer() {
+  if (visualizerRunning) return;
+  visualizerRunning = true;
+  requestAnimationFrame(drawVisualizer);
+}
+
+function stopVisualizer() {
+  visualizerRunning = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  prevLevels = new Array(BAR_COUNT).fill(0);
+  prevRaw = new Array(BAR_COUNT).fill(0);
+  pieces.length = 0;
+}
+
+// Временный запуск для показа плоской линии при загрузке
+ctx.fillStyle = '#f5a623';
+for (let i = 0; i < BAR_COUNT; i++) {
+  const barWidth = canvas.width / BAR_COUNT;
+  ctx.fillRect(i * barWidth + barWidth * 0.15, canvas.height - 2, barWidth * 0.7, 2);
+}
 
 // ============================================
-// ФОНОВЫЙ ШУМ
+// ФОНОВЫЙ ШУМ (рисуем один раз, не каждый кадр)
 // ============================================
 const bgCanvas = document.getElementById('bgNoise');
 const bgCtx = bgCanvas.getContext('2d');
 const noiseToggle = document.getElementById('noiseToggle');
 let noiseEnabled = true;
-let noiseFrameId = null;
 
 function resizeBg() {
   bgCanvas.width = window.innerWidth;
   bgCanvas.height = window.innerHeight;
+  if (noiseEnabled) drawBgNoiseOnce();
 }
 resizeBg();
-window.addEventListener('resize', resizeBg);
 
-function drawBgNoise() {
-  if (!noiseEnabled) return;
+let bgNoiseResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(bgNoiseResizeTimer);
+  bgNoiseResizeTimer = setTimeout(resizeBg, 250);
+});
+
+function drawBgNoiseOnce() {
   const w = bgCanvas.width;
   const h = bgCanvas.height;
-  const imageData = bgCtx.createImageData(w, h);
+  // Уменьшаем разрешение шума для экономии памяти/трафика — растягивается до полного
+  const step = 2;
+  const smallW = Math.ceil(w / step);
+  const smallH = Math.ceil(h / step);
+
+  const imageData = bgCtx.createImageData(smallW, smallH);
   const buffer = new Uint32Array(imageData.data.buffer);
 
   for (let i = 0; i < buffer.length; i++) {
@@ -550,21 +588,28 @@ function drawBgNoise() {
     buffer[i] = (255 << 24) | (v << 16) | (v << 8) | v;
   }
 
-  bgCtx.putImageData(imageData, 0, 0);
-  noiseFrameId = requestAnimationFrame(drawBgNoise);
+  // Рисуем шум в маленький оффскрин, потом растягиваем
+  const off = document.createElement('canvas');
+  off.width = smallW;
+  off.height = smallH;
+  off.getContext('2d').putImageData(imageData, 0, 0);
+
+  bgCtx.imageSmoothingEnabled = true;
+  bgCtx.clearRect(0, 0, w, h);
+  bgCtx.drawImage(off, 0, 0, w, h);
 }
-drawBgNoise();
+
+drawBgNoiseOnce();
 
 noiseToggle.addEventListener('click', () => {
   noiseEnabled = !noiseEnabled;
   if (noiseEnabled) {
     noiseToggle.classList.remove('off');
     noiseToggle.textContent = '◐';
-    drawBgNoise();
+    drawBgNoiseOnce();
   } else {
     noiseToggle.classList.add('off');
     noiseToggle.textContent = '○';
-    cancelAnimationFrame(noiseFrameId);
     bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
   }
 });
@@ -624,7 +669,20 @@ function showNextNews() {
 }
 
 showNextNews();
-setInterval(showNextNews, 30000);
+let newsInterval = null;
+function startNewsTimer() {
+  if (newsInterval) clearInterval(newsInterval);
+  newsInterval = setInterval(showNextNews, 30000);
+}
+function stopNewsTimer() {
+  if (newsInterval) { clearInterval(newsInterval); newsInterval = null; }
+}
+startNewsTimer();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopNewsTimer();
+  else startNewsTimer();
+});
 
 // ============================================
 // ЭЛЕМЕНТЫ
@@ -733,6 +791,7 @@ function tuneIn() {
   updatePlayIcon(true);
   nowPlaying.textContent = 'трек ' + (index + 1);
 
+  startVisualizer();
   scheduleNextTrack(index, position);
   syncTimer = setInterval(checkSync, SYNC_INTERVAL);
 }
@@ -788,6 +847,8 @@ let wdReloads = 0;
 let wdTrack = -1;
 
 setInterval(() => {
+  if (document.hidden) return;
+
   if (audioCtx && audioCtx.state === 'suspended' && isPlaying) {
     audioCtx.resume().catch(() => {});
   }
@@ -1033,7 +1094,16 @@ function updateSendButton() {
     chatSend.textContent = '→';
   }
 }
-setInterval(updateSendButton, 200);
+
+let sendBtnInterval = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (sendBtnInterval) { clearInterval(sendBtnInterval); sendBtnInterval = null; }
+  } else {
+    if (!sendBtnInterval) sendBtnInterval = setInterval(updateSendButton, 200);
+  }
+});
+sendBtnInterval = setInterval(updateSendButton, 200);
 
 function sendMessage() {
   const text = chatInput.value.trim();
@@ -1114,6 +1184,7 @@ playBtn.addEventListener('click', () => {
     isPlaying = false;
     updatePlayIcon(false);
     nowPlaying.textContent = 'на паузе';
+    stopVisualizer();
   } else {
     initAudio();
     unlockAudio();
@@ -1401,7 +1472,9 @@ function renderTopList(elementId, items, isWorst, startRank) {
 // ============================================
 let lastVoteKey = null;
 let lastReactionKey = null;
-setInterval(() => {
+let trackUiInterval = null;
+
+function tickTrackUi() {
   const vk = currentVoteKey();
   const rk = currentReactionKey();
 
@@ -1414,7 +1487,17 @@ setInterval(() => {
     lastReactionKey = rk;
     updateReactionsUI();
   }
-}, 1000);
+}
+
+trackUiInterval = setInterval(tickTrackUi, 1000);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (trackUiInterval) { clearInterval(trackUiInterval); trackUiInterval = null; }
+  } else {
+    if (!trackUiInterval) trackUiInterval = setInterval(tickTrackUi, 1000);
+  }
+});
 
 // ============================================
 // ПОГОДА
@@ -1434,10 +1517,16 @@ window.addEventListener('resize', resizeWfx);
 let weatherFxActive = null;
 let weatherFxParticles = [];
 let lightningTimer = null;
+let weatherFxRunning = false;
 
 function initWeatherFx(type) {
   weatherFxActive = type;
   weatherFxParticles = [];
+
+  if (!type) {
+    stopWeatherFx();
+    return;
+  }
 
   const w = weatherFxCanvas.width;
   const h = weatherFxCanvas.height;
@@ -1466,6 +1555,20 @@ function initWeatherFx(type) {
       if (Math.random() < 0.25) flashLightning();
     }, 8000 + Math.random() * 7000);
   }
+
+  startWeatherFx();
+}
+
+function stopWeatherFx() {
+  weatherFxRunning = false;
+  wfxCtx.clearRect(0, 0, weatherFxCanvas.width, weatherFxCanvas.height);
+  if (lightningTimer) { clearInterval(lightningTimer); lightningTimer = null; }
+}
+
+function startWeatherFx() {
+  if (weatherFxRunning) return;
+  weatherFxRunning = true;
+  requestAnimationFrame(drawWeatherFx);
 }
 
 function flashLightning() {
@@ -1480,6 +1583,7 @@ function flashLightning() {
 }
 
 function drawWeatherFx() {
+  if (!weatherFxRunning) return;
   requestAnimationFrame(drawWeatherFx);
 
   if (!weatherFxActive || weatherFxParticles.length === 0) {
@@ -1519,7 +1623,6 @@ function drawWeatherFx() {
     if (p.x > w + 20) p.x = -20;
   }
 }
-drawWeatherFx();
 
 function setWeatherFx(code) {
   let type = null;
@@ -1597,10 +1700,20 @@ async function loadMurinoWeather() {
 }
 
 loadMurinoWeather();
-setInterval(loadMurinoWeather, 30 * 60 * 1000);
+
+let weatherInterval = setInterval(loadMurinoWeather, 30 * 60 * 1000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (weatherInterval) { clearInterval(weatherInterval); weatherInterval = null; }
+    stopWeatherFx();
+  } else {
+    if (!weatherInterval) weatherInterval = setInterval(loadMurinoWeather, 30 * 60 * 1000);
+    loadMurinoWeather();
+  }
+});
 
 // ============================================
-// ИЗМЕРЕНИЕ ДЛИТЕЛЬНОСТЕЙ
+// ИЗМЕРЕНИЕ ДЛИТЕЛЬНОСТЕЙ (dev)
 // ============================================
 window.measureRealDurations = async () => {
   const real = [];
