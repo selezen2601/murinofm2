@@ -860,9 +860,7 @@ body::before {
   background: linear-gradient(90deg, #d44020, #ff5a35);
 }
 
-/* ============================================
-   ЧАТ (увеличен в 2 раза)
-   ============================================ */
+/* ЧАТ */
 .chat-box {
   width: 100%;
   max-width: 520px;
@@ -893,7 +891,6 @@ body::before {
 
 .chat-header b { color: var(--accent); }
 
-/* ПК: было 110px, стало 220px */
 .chat-messages {
   height: 220px;
   overflow-y: auto;
@@ -1280,7 +1277,7 @@ body::before {
 }
 
 /* ============================================
-   АДАПТАЦИЯ
+   МОБИЛЬНАЯ ВЕРСИЯ
    ============================================ */
 @media (max-width: 1100px) {
   .top-row {
@@ -1294,134 +1291,140 @@ body::before {
     margin-top: 8px;
     pointer-events: auto;
   }
-  .top-block {
-    width: auto;
-    flex: 1;
-  }
+  .top-block { width: auto; flex: 1; }
 }
 
 @media (max-width: 700px) {
-  .theme-switcher {
-    top: 52px;
-    left: 8px;
-    padding: 3px;
-    gap: 3px;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-  }
 
-  .theme-btn {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-  }
+  .top-news-ticker { height: 32px; }
+  .top-news-label { font-size: 9px; padding: 0 10px; letter-spacing: 2px; }
+  .top-news-track { font-size: 11px; }
+  .top-news-track span { padding: 0 50px; }
 
-  .extra-buttons {
-    position: fixed;
-    top: 52px;
-    left: auto;
-    right: 8px;
-    flex-direction: row;
-    gap: 4px;
-    align-items: center;
-    z-index: 20;
-  }
-
-  .extra-btn {
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    border-radius: 4px;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-    border-width: 2px;
-    flex-shrink: 0;
-  }
-
-  .extra-text { display: none; }
-
-  .extra-icon {
-    font-size: 14px;
-    line-height: 1;
-  }
-
-  .tg-btn img,
-  .tg-btn svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .online-badge {
-    position: fixed;
-    top: 90px;
-    right: 8px;
-    font-size: 9px;
-    padding: 5px 8px;
-    letter-spacing: 1px;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-    z-index: 11;
-  }
-
-  .online-dot { width: 6px; height: 6px; }
-
+  .theme-switcher,
+  .extra-buttons,
+  .online-badge,
   .noise-toggle {
     position: fixed;
-    top: 90px;
-    right: 130px;
-    width: 30px;
-    height: 30px;
-    font-size: 12px;
+    top: 40px;
+    transform: none;
+  }
+
+  .theme-switcher {
+    left: 8px; right: auto;
+    padding: 2px; gap: 2px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+  }
+  .theme-btn { width: 24px; height: 24px; font-size: 11px; }
+
+  .extra-buttons {
+    left: 50%; right: auto;
+    transform: translateX(-50%);
+    flex-direction: row; gap: 3px; align-items: center;
+    z-index: 20;
+  }
+  .extra-btn {
+    width: 26px; height: 26px;
+    padding: 0; border-radius: 4px;
+    justify-content: center; align-items: center;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    border-width: 2px; flex-shrink: 0;
+  }
+  .extra-text { display: none; }
+  .extra-icon { font-size: 12px; line-height: 1; }
+  .tg-btn img, .tg-btn svg { width: 14px; height: 14px; }
+
+  .online-badge {
+    right: 40px;
+    font-size: 8px; padding: 4px 6px;
+    letter-spacing: 1px; gap: 4px;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    z-index: 11;
+  }
+  .online-dot { width: 5px; height: 5px; }
+
+  .noise-toggle {
+    right: 8px;
+    width: 26px; height: 26px;
+    font-size: 11px;
     box-shadow: 2px 2px 0 var(--shadow-color);
     z-index: 11;
   }
 
-  .drungader-btn {
-    position: fixed;
-    bottom: 12px;
-    left: 12px;
-    padding: 8px 12px;
-    font-size: 10px;
-    z-index: 50;
-    box-shadow: 3px 3px 0 var(--shadow-color);
+  .radio { padding: 80px 12px 90px; gap: 8px; }
+  .logo { font-size: 42px; margin-top: 4px; }
+  .player-box { padding: 12px; box-shadow: 5px 5px 0 var(--shadow-color); }
+  .btn { width: 44px; height: 44px; }
+  .btn-small { width: 32px; height: 32px; font-size: 13px; }
+
+  .chat-box { max-width: 100%; position: relative; }
+
+  .chat-messages {
+    height: 60vh;
+    min-height: 380px;
+    max-height: 600px;
+    font-size: 13px;
   }
 
-  .drungader-btn-label { display: none; }
-  .drungader-btn span:first-child { font-size: 22px; }
-
-  .radio {
-    padding: 130px 14px 90px;
-    gap: 8px;
+  .chat-gif {
+    max-height: none;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin-top: 6px;
   }
 
-  .logo { font-size: 44px; margin-top: 4px; }
-  .player-box { padding: 14px; box-shadow: 5px 5px 0 var(--shadow-color); }
-  .btn { width: 46px; height: 46px; }
-  .btn-small { width: 34px; height: 34px; font-size: 14px; }
+  .gif-panel {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    max-height: none;
+    height: 100%;
+    background: var(--bg-paper);
+    z-index: 100;
+    border-radius: 0;
+    border: none;
+  }
+  .gif-panel.active { display: flex; }
+  .gif-panel-header { padding: 10px 14px; font-size: 13px; letter-spacing: 3px; }
+  .gif-panel-url { padding: 10px 12px; gap: 6px; }
+  .gif-panel-url input { font-size: 13px; padding: 10px 12px; }
+  .gif-panel-url button { width: 40px; font-size: 18px; }
+  .gif-panel-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 6px; padding: 10px 12px;
+    max-height: none; flex: 1; overflow-y: auto;
+  }
+  .gif-thumb { height: 90px; object-fit: cover; }
 
-  /* Мобила: было 90px, стало 180px */
-  .chat-messages { height: 180px; font-size: 12px; }
-
-  .footer { font-size: 9px; left: 12px; bottom: 90px; }
+  .footer { font-size: 8px; left: 10px; bottom: 50px; }
   .vote-popup { left: 10px; width: 220px; }
 
   .weather-widget {
-    bottom: 12px;
-    right: 12px;
-    padding: 6px 10px;
-    gap: 6px;
+    bottom: 12px; right: 12px;
+    padding: 5px 8px; gap: 5px;
     box-shadow: 3px 3px 0 var(--shadow-color);
-    z-index: 10;
+    z-index: 9998;
   }
+  .weather-icon { font-size: 18px; }
+  .weather-temp { font-size: 13px; }
+  .weather-city { font-size: 7px; letter-spacing: 1px; }
+  .weather-desc { font-size: 8px; }
 
-  .weather-icon { font-size: 20px; }
-  .weather-temp { font-size: 14px; }
-  .weather-city { font-size: 8px; letter-spacing: 2px; }
-  .weather-desc { font-size: 9px; }
-
-  .top-news-ticker { height: 40px; }
-  .top-news-label { font-size: 10px; padding: 0 12px; letter-spacing: 2px; }
-  .top-news-track { font-size: 12px; }
-  .top-news-track span { padding: 0 60px; }
+  .drungader-btn {
+    position: fixed;
+    bottom: 12px; left: 12px;
+    padding: 4px 8px;
+    font-size: 9px;
+    z-index: 9999 !important;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .drungader-btn-label { display: none; }
+  .drungader-btn span:first-child { font-size: 18px; }
 
   .top-row { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 4px; }
   .top-block { width: 100%; }
@@ -1432,16 +1435,29 @@ body::before {
   .top-rank { font-size: 10px; min-width: 16px; }
   .top-score { font-size: 9px; }
 
-  .gif-panel { max-height: 260px; }
-  .gif-panel-grid { max-height: 180px; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
-  .gif-thumb { height: 60px; }
-  .chat-gif { max-height: 160px; }
+  .emoji-bar { padding: 5px 10px; gap: 3px; }
+  .emoji-btn { font-size: 16px; padding: 2px 5px; }
+  .chat-input-row input { font-size: 12px; padding: 10px 12px; }
+  .chat-input-row .gif-btn { padding: 0 12px; font-size: 15px; }
+  .chat-input-row button#chatSend { padding: 0 18px; font-size: 13px; }
+  .name-input-row input { font-size: 11px; padding: 7px 12px; }
 }
 
 @media (max-width: 380px) {
-  .logo { font-size: 38px; letter-spacing: -2px; }
+  .logo { font-size: 36px; letter-spacing: -2px; }
   .top-bar { font-size: 10px; letter-spacing: 2px; gap: 8px; }
 
-  /* Маленькие экраны: было 70px, стало 140px */
-  .chat-messages { height: 140px; }
+  .theme-switcher { padding: 2px; gap: 2px; }
+  .theme-btn { width: 22px; height: 22px; font-size: 10px; }
+
+  .extra-btn { width: 24px; height: 24px; }
+  .extra-icon { font-size: 11px; }
+  .tg-btn img, .tg-btn svg { width: 12px; height: 12px; }
+
+  .online-badge { font-size: 7px; padding: 3px 5px; right: 36px; }
+  .noise-toggle { width: 24px; height: 24px; font-size: 10px; }
+
+  .chat-messages { height: 55vh; min-height: 320px; }
+  .gif-panel-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+  .gif-thumb { height: 70px; }
 }
