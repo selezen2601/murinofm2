@@ -848,7 +848,9 @@ body::before {
   background: linear-gradient(90deg, #d44020, #ff5a35);
 }
 
-/* ЧАТ */
+/* ============================================
+   ЧАТ
+   ============================================ */
 .chat-box {
   width: 100%;
   max-width: 520px;
@@ -860,7 +862,6 @@ body::before {
   flex-direction: column;
   box-shadow: 5px 5px 0 var(--shadow-color);
   transition: all 0.3s ease;
-  position: relative;
 }
 
 .chat-header {
@@ -889,7 +890,6 @@ body::before {
   font-size: 13px;
   line-height: 1.4;
   background: var(--bg-paper-3);
-  position: relative;
 }
 
 .chat-messages::-webkit-scrollbar { width: 6px; }
@@ -923,46 +923,14 @@ body::before {
   object-fit: contain;
 }
 
-.emoji-bar {
-  display: flex;
-  gap: 4px;
-  padding: 6px 12px;
-  background: var(--bg-paper-2);
-  border-top: 1px solid var(--border);
-  overflow-x: auto;
-}
-
-.emoji-bar::-webkit-scrollbar { height: 0; }
-
-.emoji-btn {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.15s;
-  flex-shrink: 0;
-  line-height: 1;
-}
-
-.emoji-btn:hover {
-  background: var(--accent);
-  transform: scale(1.2);
-}
-
+/* ПАНЕЛЬ ГИФОК — обычный flex-элемент внутри chat-box,
+   появляется над строкой ввода и расталкивает messages вверх */
 .gif-panel {
   display: none;
   flex-direction: column;
   background: var(--bg-paper-2);
   border-top: 2px solid var(--border);
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  max-height: 260px;
-  z-index: 50;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.2);
+  flex-shrink: 0;
 }
 
 .gif-panel.active { display: flex; }
@@ -1011,6 +979,7 @@ body::before {
   font-family: 'Courier Prime', monospace;
   font-size: 11px;
   outline: none;
+  min-width: 0;
 }
 
 .gif-panel-url input::placeholder { color: var(--text-soft); }
@@ -1025,6 +994,7 @@ body::before {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+  flex-shrink: 0;
 }
 
 .gif-panel-url button:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--shadow-color); }
@@ -1035,7 +1005,7 @@ body::before {
   gap: 4px;
   padding: 8px 12px;
   overflow-y: auto;
-  max-height: 200px;
+  max-height: 220px;
 }
 
 .gif-panel-grid::-webkit-scrollbar { width: 6px; }
@@ -1061,8 +1031,6 @@ body::before {
 .chat-input-row {
   display: flex;
   border-top: 2px solid var(--border);
-  position: relative;
-  z-index: 60;
   background: var(--bg-paper);
   flex-shrink: 0;
 }
@@ -1094,7 +1062,11 @@ body::before {
   flex-shrink: 0;
 }
 
-.chat-input-row .gif-btn:hover { background: var(--accent); color: var(--bg-paper); }
+.chat-input-row .gif-btn:hover,
+.chat-input-row .gif-btn.active {
+  background: var(--accent);
+  color: var(--bg-paper);
+}
 
 .chat-input-row button#chatSend {
   background: var(--border);
@@ -1134,6 +1106,7 @@ body::before {
   font-family: 'Courier Prime', monospace;
   font-size: 12px;
   font-weight: 700;
+  min-width: 0;
 }
 
 .name-input-row input::placeholder { color: var(--text-soft); font-weight: 400; }
@@ -1273,11 +1246,6 @@ body::before {
 
   .chat-box {
     max-width: 100%;
-    position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
   }
 
   .chat-messages {
@@ -1289,39 +1257,14 @@ body::before {
 
   .chat-gif {
     max-height: 120px;
-    max-width: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    display: block;
-    margin-top: 6px;
   }
 
-  .gif-panel {
-    position: absolute;
-    left: 0; right: 0;
-    bottom: 100%;
-    top: auto;
-    max-height: 70vh;
-    height: auto;
-    background: var(--bg-paper);
-    z-index: 100;
-    border-radius: 0;
-    border: none;
-    border-top: 2px solid var(--border);
-    box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
-  }
-  .gif-panel.active { display: flex; }
-  .gif-panel-header { padding: 10px 14px; font-size: 13px; letter-spacing: 3px; }
-  .gif-panel-url { padding: 10px 12px; gap: 6px; }
-  .gif-panel-url input { font-size: 13px; padding: 10px 12px; }
-  .gif-panel-url button { width: 40px; font-size: 18px; }
   .gif-panel-grid {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 6px; padding: 10px 12px;
-    max-height: 50vh; overflow-y: auto;
+    max-height: 50vh;
   }
-  .gif-thumb { height: 90px; object-fit: cover; }
+  .gif-thumb { height: 80px; }
 
   .footer { font-size: 8px; left: 10px; bottom: 50px; }
   .vote-popup { left: 10px; width: 220px; }
@@ -1346,8 +1289,6 @@ body::before {
   .top-rank { font-size: 10px; min-width: 16px; }
   .top-score { font-size: 9px; }
 
-  .emoji-bar { padding: 5px 10px; gap: 3px; }
-  .emoji-btn { font-size: 16px; padding: 2px 5px; }
   .chat-input-row input { font-size: 12px; padding: 10px 12px; }
   .chat-input-row .gif-btn { padding: 0 12px; font-size: 15px; }
   .chat-input-row button#chatSend { padding: 0 18px; font-size: 13px; }
